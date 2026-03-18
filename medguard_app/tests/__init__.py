@@ -1,0 +1,3 @@
+"""
+MedGuard App Tests.
+"""
