@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}How It Works{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">How MedGuard AI Works</h1>
+        <p class="page-subtitle">Transparent, explainable medication safety analysis</p>
+    </div>
+
+    <!-- Architecture Section -->
+    <section class="architecture-section">
+        <div class="glass-card">
+            <h2 class="card-title">
+                <i class="fas fa-project-diagram"></i> RAG-Powered Architecture
+            </h2>
+            <div class="architecture-flow">
+                <div class="flow-step">
+                    <div class="flow-pill">
+                        <i class="fas fa-keyboard"></i>
+                        <span>Input</span>
+                    </div>
+                </div>
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-pill">
+                        <i class="fas fa-spell-check"></i>
+                        <span>Normalize</span>
+                    </div>
+                </div>
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-pill">
+                        <i class="fas fa-database"></i>
+                        <span>MySQL Query</span>
+                    </div>
+                </div>
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-pill">
+                        <i class="fas fa-vector-square"></i>
+                        <span>Vector Retrieval</span>
+                    </div>
+                </div>
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-pill">
+                        <i class="fas fa-calculator"></i>
+                        <span>Risk Score</span>
+                    </div>
+                </div>
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-pill">
+                        <i class="fas fa-brain"></i>
+                        <span>LLM Synthesis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RAG Explanation Section -->
+    <section class="rag-section">
+        <div class="glass-card">
+            <h2 class="card-title">
+                <i class="fas fa-search-plus"></i> Retrieval-Augmented Generation (RAG)
+            </h2>
+            <p class="card-description">
+                MedGuard combines structured database queries with semantic vector search to provide comprehensive drug safety analysis.
+            </p>
+            <div class="rag-components">
+                <div class="rag-component">
+                    <div class="component-icon">
+                        <i class="fas fa-table"></i>
+                    </div>
+                    <h3>Structured Data</h3>
+                    <p>MySQL database stores specific drug interactions, dosages, contraindications from FDA databases</p>
+                </div>
+                <div class="rag-component">
+                    <div class="component-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Vector Embeddings</h3>
+                    <p>ChromaDB uses BGE-base embeddings to semantically search 500k+ medical documents for contextual information</p>
+                </div>
+                <div class="rag-component">
+                    <div class="component-icon">
+                        <i class="fas fa-merge"></i>
+                    </div>
+                    <h3>Information Fusion</h3>
+                    <p>DeepSeek LLM combines structured facts with retrieved context to generate personalized explanations</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Sources Section -->
+    <section class="data-sources-section">
+        <h2 class="section-title">Data Sources</h2>
+        <div class="grid-3">
+            <div class="glass-card source-card">
+                <div class="source-icon">
+                    <i class="fas fa-hospital"></i>
+                </div>
+                <h3 class="source-title">FDA Adverse Events</h3>
+                <p class="source-text">Real-world adverse event reports from the FDA FAERS database</p>
+            </div>
+            <div class="glass-card source-card">
+                <div class="source-icon">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+                <h3 class="source-title">FDA Drug Labels</h3>
+                <p class="source-text">Official drug labeling information including indications and warnings</p>
+            </div>
+            <div class="glass-card source-card">
+                <div class="source-icon">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <h3 class="source-title">SIDER Dataset</h3>
+                <p class="source-text">Side effect information extracted from drug package inserts</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Stack Section -->
+    <section class="stack-section">
+        <div class="glass-card">
+            <h2 class="card-title">
+                <i class="fas fa-layer-group"></i> Technical Stack
+            </h2>
+            <div class="stack-grid">
+                <div class="stack-item">
+                    <i class="fab fa-python"></i>
+                    <span>Django (Python 3.13)</span>
+                </div>
+                <div class="stack-item">
+                    <i class="fas fa-database"></i>
+                    <span>MySQL + ChromaDB</span>
+                </div>
+                <div class="stack-item">
+                    <i class="fas fa-vector-square"></i>
+                    <span>BGE Embeddings</span>
+                </div>
+                <div class="stack-item">
+                    <i class="fas fa-robot"></i>
+                    <span>DeepSeek API</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Decision Flow Section -->
+    <section class="decision-flow-section">
+        <div class="glass-card">
+            <h2 class="card-title">
+                <i class="fas fa-route"></i> AI-Powered Decision Flow
+            </h2>
+            <div class="decision-steps">
+                <div class="decision-step">
+                    <span class="step-indicator">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    <div class="step-content">
+                        <strong>Step 1: Input Normalization</strong>
+                        <p class="step-description">Drug names and symptoms are standardized using fuzzy matching and brand-to-generic mapping (handles misspellings like "ibrufen" → "ibuprofen")</p>
+                    </div>
+                </div>
+                <div class="decision-step">
+                    <span class="step-indicator">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    <div class="step-content">
+                        <strong>Step 2: Structured Database Query</strong>
+                        <p class="step-description">MySQL database provides known drug interactions, FDA-approved indications, contraindications, and dosing guidelines</p>
+                    </div>
+                </div>
+                <div class="decision-step">
+                    <span class="step-indicator">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    <div class="step-content">
+                        <strong>Step 3: Vector Semantic Search</strong>
+                        <p class="step-description">ChromaDB retrieves relevant context from 500k+ medical documents using BGE embeddings - finds nuanced interactions and case studies</p>
+                    </div>
+                </div>
+                <div class="decision-step">
+                    <span class="step-indicator">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    <div class="step-content">
+                        <strong>Step 4: Risk Calculation</strong>
+                        <p class="step-description">Weighted algorithm combines interaction severity, side effect overlap, treatment appropriateness into a 0-100 risk score</p>
+                    </div>
+                </div>
+                <div class="decision-step">
+                    <span class="step-indicator">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    <div class="step-content">
+                        <strong>Step 5: RAG Synthesis</strong>
+                        <p class="step-description">DeepSeek LLM combines structured data + retrieved context to generate personalized, explainable safety recommendations</p>
+                    </div>
+                </div>
+                <div class="decision-step">
+                    <span class="step-indicator">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    <div class="step-content">
+                        <strong>Step 6: Alternative Discovery</strong>
+                        <p class="step-description">System suggests safer therapeutic alternatives based on your specific symptom profile and existing medications</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <a href="{% url 'home' %}" class="btn-primary">
+            <i class="fas fa-stethoscope"></i> Try It Now
+        </a>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,387 @@
+"""
+Interaction Checker - Check for drug-drug interactions.
+"""
+
+import logging
+from typing import Optional
+
+from apps.data_access.repositories import DrugRepository, InteractionRepository
+
+logger = logging.getLogger(__name__)
+
+
+class InteractionChecker:
+    """
+    Checks for drug-drug interactions using the database and known interaction rules.
+    """
+
+    # Severity mapping from database to display
+    SEVERITY_DISPLAY = {
+        "contraindicated": "critical",
+        "major": "high",
+        "moderate": "medium",
+        "minor": "low",
+        "unknown": "unknown",
+    }
+
+    # Known high-risk interaction patterns (supplement database)
+    KNOWN_INTERACTIONS = {
+        # Blood thinners
+        ("warfarin", "aspirin"): {
+            "severity": "major",
+            "description": "Increased risk of bleeding",
+            "mechanism": "Both drugs affect blood clotting through different mechanisms",
+        },
+        ("warfarin", "ibuprofen"): {
+            "severity": "major",
+            "description": "Increased risk of bleeding and GI hemorrhage",
+            "mechanism": "NSAIDs inhibit platelet function and can displace warfarin from protein binding",
+        },
+        ("warfarin", "naproxen"): {
+            "severity": "major",
+            "description": "Increased risk of bleeding",
+            "mechanism": "NSAIDs inhibit platelet function and can increase warfarin effect",
+        },
+        # NSAIDs together
+        ("aspirin", "ibuprofen"): {
+            "severity": "major",
+            "description": "Increased risk of GI bleeding and reduced cardioprotective effect of aspirin",
+            "mechanism": "Both are NSAIDs that affect COX enzymes; ibuprofen may block aspirin's antiplatelet effect",
+        },
+        ("aspirin", "naproxen"): {
+            "severity": "moderate",
+            "description": "Increased risk of GI bleeding",
+            "mechanism": "Both are NSAIDs with GI toxicity",
+        },
+        ("ibuprofen", "naproxen"): {
+            "severity": "moderate",
+            "description": "Increased risk of GI bleeding and kidney problems",
+            "mechanism": "Duplicative NSAID therapy increases adverse effects",
+        },
+        # Lithium interactions
+        ("lithium", "ibuprofen"): {
+            "severity": "major",
+            "description": "Increased lithium levels - risk of toxicity",
+            "mechanism": "NSAIDs reduce renal clearance of lithium",
+        },
+        ("lithium", "naproxen"): {
+            "severity": "major",
+            "description": "Increased lithium levels - risk of toxicity",
+            "mechanism": "NSAIDs reduce renal clearance of lithium",
+        },
+        # ACE inhibitors + NSAIDs
+        ("lisinopril", "ibuprofen"): {
+            "severity": "moderate",
+            "description": "Reduced antihypertensive effect and increased risk of kidney damage",
+            "mechanism": "NSAIDs antagonize the blood pressure lowering effect of ACE inhibitors",
+        },
+        # SSRIs + NSAIDs
+        ("fluoxetine", "aspirin"): {
+            "severity": "moderate",
+            "description": "Increased risk of bleeding",
+            "mechanism": "SSRIs impair platelet function",
+        },
+        ("sertraline", "aspirin"): {
+            "severity": "moderate",
+            "description": "Increased risk of bleeding",
+            "mechanism": "SSRIs impair platelet function",
+        },
+        ("fluoxetine", "ibuprofen"): {
+            "severity": "moderate",
+            "description": "Increased risk of GI bleeding",
+            "mechanism": "SSRIs impair platelet function; combined with NSAID increases bleeding risk",
+        },
+        # Metformin interactions
+        ("metformin", "contrast dye"): {
+            "severity": "major",
+            "description": "Risk of lactic acidosis",
+            "mechanism": "Contrast media can cause acute kidney injury, impairing metformin clearance",
+        },
+        # Statin interactions
+        ("atorvastatin", "gemfibrozil"): {
+            "severity": "major",
+            "description": "Increased risk of rhabdomyolysis",
+            "mechanism": "Gemfibrozil inhibits statin metabolism",
+        },
+        ("simvastatin", "amiodarone"): {
+            "severity": "major",
+            "description": "Increased risk of myopathy and rhabdomyolysis",
+            "mechanism": "Amiodarone inhibits CYP3A4 metabolism of simvastatin",
+        },
+    }
+
+    def __init__(
+        self,
+        interaction_repo: Optional[InteractionRepository] = None,
+        drug_repo: Optional[DrugRepository] = None,
+    ):
+        self.interaction_repo = interaction_repo or InteractionRepository()
+        self.drug_repo = drug_repo or DrugRepository()
+
+    def _get_interaction_key(self, drug1: str, drug2: str) -> tuple:
+        """Get normalized key for interaction lookup."""
+        d1, d2 = drug1.lower().strip(), drug2.lower().strip()
+        return (min(d1, d2), max(d1, d2))
+
+    def check_drug_pair(self, drug1: str, drug2: str) -> dict:
+        """
+        Check if two drugs have a known interaction.
+
+        LOOKUP ORDER (standardized):
+        1. MySQL Database (source of truth)
+        2. Vector Search (enrichment from medical literature)
+        3. Hardcoded Fallback (deprecated, for gaps in database)
+
+        Args:
+            drug1: First drug name (canonical)
+            drug2: Second drug name (canonical)
+
+        Returns:
+            Dict with interaction details or None if no interaction
+        """
+        d1_lower = drug1.lower().strip()
+        d2_lower = drug2.lower().strip()
+
+        # Same drug check
+        if d1_lower == d2_lower:
+            return {
+                "interacts": False,
+                "severity": None,
+                "description": "Same drug",
+                "mechanism": None,
+            }
+
+        # ========================================
+        # STEP 1: MySQL DATABASE (Source of Truth)
+        # ========================================
+        db_interaction = self.interaction_repo.check_interaction(drug1, drug2)
+
+        if db_interaction:
+            return {
+                "interacts": True,
+                "severity": self.SEVERITY_DISPLAY.get(db_interaction.severity, "unknown"),
+                "severity_raw": db_interaction.severity,
+                "description": db_interaction.description[:500] if db_interaction.description else "Interaction found",
+                "mechanism": db_interaction.clinical_effect,
+                "management": db_interaction.management,
+                "source": "database",
+            }
+
+        # ========================================
+        # STEP 2: VECTOR SEARCH (Enrichment)
+        # ========================================
+        # Search medical literature for interaction context
+        vector_result = self._check_vector_interaction(d1_lower, d2_lower)
+        if vector_result and vector_result.get("interacts"):
+            return vector_result
+
+        # ========================================
+        # STEP 3: HARDCODED FALLBACK (Deprecated)
+        # ========================================
+        key = self._get_interaction_key(d1_lower, d2_lower)
+        if key in self.KNOWN_INTERACTIONS:
+            info = self.KNOWN_INTERACTIONS[key]
+            return {
+                "interacts": True,
+                "severity": self.SEVERITY_DISPLAY.get(info["severity"], "unknown"),
+                "severity_raw": info["severity"],
+                "description": info["description"],
+                "mechanism": info["mechanism"],
+                "management": None,
+                "source": "hardcoded_fallback",
+            }
+
+        # Also check with reversed key
+        key_reversed = (key[1], key[0])
+        if key_reversed in self.KNOWN_INTERACTIONS:
+            info = self.KNOWN_INTERACTIONS[key_reversed]
+            return {
+                "interacts": True,
+                "severity": self.SEVERITY_DISPLAY.get(info["severity"], "unknown"),
+                "severity_raw": info["severity"],
+                "description": info["description"],
+                "mechanism": info["mechanism"],
+                "management": None,
+                "source": "hardcoded_fallback",
+            }
+
+        # ========================================
+        # NO INTERACTION FOUND
+        # ========================================
+        return {
+            "interacts": False,
+            "severity": None,
+            "description": None,
+            "mechanism": None,
+            "source": "no_interaction",
+        }
+
+    def _check_vector_interaction(self, drug1: str, drug2: str) -> Optional[dict]:
+        """
+        Check for drug interactions using vector database search.
+
+        Args:
+            drug1: First drug name
+            drug2: Second drug name
+
+        Returns:
+            Dict with interaction info if found, None otherwise
+        """
+        try:
+            from apps.data_access.vector_store import get_chroma_client
+            vector_store = get_chroma_client()
+
+            # Search for interaction context
+            interaction_context = vector_store.search_interactions(
+                drug1=drug1,
+                drug2=drug2,
+                limit=3,
+            )
+
+            if not interaction_context:
+                return None
+
+            # Analyze the context for interaction indicators
+            for result in interaction_context:
+                text = result.get("text", "").lower()
+                similarity = result.get("similarity_score", result.get("distance", 1.0))
+
+                # Convert distance to similarity if needed
+                if "distance" in result:
+                    similarity = 1.0 - result["distance"]
+
+                # Look for interaction indicators
+                interaction_keywords = [
+                    "interact", "contraindicated", "should not be combined",
+                    "avoid", "caution", "risk", "may increase", "may decrease"
+                ]
+
+                severity_keywords = {
+                    "severe": ["severe", "serious", "life-threatening", "contraindicated"],
+                    "major": ["major", "significant", "important"],
+                    "moderate": ["moderate", "caution", "monitor"],
+                }
+
+                # Check if text indicates an interaction
+                has_interaction = any(keyword in text for keyword in interaction_keywords)
+
+                if has_interaction and similarity > 0.7:
+                    # Determine severity from keywords
+                    severity = "moderate"  # default
+                    for sev, keywords in severity_keywords.items():
+                        if any(kw in text for kw in keywords):
+                            severity = sev
+                            break
+
+                    return {
+                        "interacts": True,
+                        "severity": self.SEVERITY_DISPLAY.get(severity, "medium"),
+                        "severity_raw": severity,
+                        "description": result.get("text", "")[:500],
+                        "mechanism": "Based on medical literature analysis",
+                        "management": None,
+                        "source": "vector_search",
+                        "confidence": similarity,
+                    }
+
+            return None
+
+        except Exception as e:
+            logger.warning(f"Vector interaction check failed for {drug1} + {drug2}: {e}")
+            return None
+
+    def check_all_interactions(
+        self,
+        proposed_drug: str,
+        existing_drugs: list[str],
+    ) -> list[dict]:
+        """
+        Check proposed drug against ALL existing medications.
+
+        Args:
+            proposed_drug: The drug being considered
+            existing_drugs: List of currently taken medications
+
+        Returns:
+            List of interaction dicts (only those with interactions)
+        """
+        interactions = []
+
+        for existing in existing_drugs:
+            existing = existing.strip()
+            if not existing:
+                continue
+
+            result = self.check_drug_pair(proposed_drug, existing)
+
+            if result["interacts"]:
+                interactions.append({
+                    "drug_pair": (proposed_drug, existing),
+                    "proposed_drug": proposed_drug,
+                    "existing_drug": existing,
+                    **result,
+                })
+
+        # Sort by severity (most severe first)
+        severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "unknown": 4}
+        interactions.sort(key=lambda x: severity_order.get(x.get("severity"), 5))
+
+        return interactions
+
+    def get_interaction_summary(
+        self,
+        proposed_drug: str,
+        existing_drugs: list[str],
+    ) -> dict:
+        """
+        Get a summary of all interactions with risk assessment.
+
+        Args:
+            proposed_drug: The drug being considered
+            existing_drugs: List of currently taken medications
+
+        Returns:
+            Summary dict with counts and risk level
+        """
+        interactions = self.check_all_interactions(proposed_drug, existing_drugs)
+
+        if not interactions:
+            return {
+                "has_interactions": False,
+                "total_interactions": 0,
+                "critical_count": 0,
+                "high_count": 0,
+                "medium_count": 0,
+                "low_count": 0,
+                "risk_level": "none",
+                "interactions": [],
+            }
+
+        # Count by severity
+        critical = sum(1 for i in interactions if i.get("severity") == "critical")
+        high = sum(1 for i in interactions if i.get("severity") == "high")
+        medium = sum(1 for i in interactions if i.get("severity") == "medium")
+        low = sum(1 for i in interactions if i.get("severity") == "low")
+
+        # Determine overall risk level
+        if critical > 0:
+            risk_level = "critical"
+        elif high > 0:
+            risk_level = "high"
+        elif medium > 0:
+            risk_level = "medium"
+        elif low > 0:
+            risk_level = "low"
+        else:
+            risk_level = "unknown"
+
+        return {
+            "has_interactions": True,
+            "total_interactions": len(interactions),
+            "critical_count": critical,
+            "high_count": high,
+            "medium_count": medium,
+            "low_count": low,
+            "risk_level": risk_level,
+            "interactions": interactions,
+        }

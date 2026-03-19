@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('medguard_app.urls')),
+    path('', include('apps.frontend.urls')),  # Frontend URLs at root
 ]

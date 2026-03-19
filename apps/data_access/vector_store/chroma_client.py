@@ -47,9 +47,18 @@ class ChromaClient:
         """Lazy-load embedding model."""
         if self._embedding_model is None:
             from sentence_transformers import SentenceTransformer
+            import os
 
             model_name = getattr(settings, "EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
             device = getattr(settings, "EMBEDDING_DEVICE", "cpu")
+
+            # Set HuggingFace token if available for faster downloads
+            hf_token = getattr(settings, "HUGGINGFACE_TOKEN", "")
+            if hf_token:
+                os.environ["HF_TOKEN"] = hf_token
+                logger.info("Using HuggingFace token for authenticated downloads")
+            else:
+                logger.info("No HuggingFace token provided - using unauthenticated access")
 
             logger.info(f"Loading embedding model: {model_name}")
             self._embedding_model = SentenceTransformer(model_name, device=device)
@@ -254,6 +263,64 @@ class ChromaClient:
                 unique_results.append(r)
 
         unique_results.sort(key=lambda x: x.get("distance", float("inf")))
+        return unique_results[:limit]
+
+    def search_medical_context(
+        self,
+        query: str,
+        limit: int = 5,
+        threshold: float = 0.7,
+    ) -> list[dict]:
+        """
+        Search for general medical context about symptoms, conditions, and treatments.
+
+        Args:
+            query: Medical query (e.g., "fever sneezing treatment")
+            limit: Maximum results
+            threshold: Similarity threshold (0.0-1.0)
+
+        Returns:
+            List of relevant medical context
+        """
+        results = []
+
+        # Search all collections for relevant medical information
+        collection_names = ["drug_labels", "adverse_reactions"]
+
+        for collection_name in collection_names:
+            collection_results = self.search_similar(
+                query=query,
+                collection_name=collection_name,
+                limit=limit,
+            )
+
+            # Filter by distance threshold (similarity)
+            # Note: ChromaDB returns distance, where smaller = more similar
+            # Convert to similarity score: similarity = 1 - distance
+            filtered_results = []
+            for result in collection_results:
+                distance = result.get("distance", 1.0)
+                similarity = 1.0 - distance
+
+                if similarity >= threshold:
+                    result["similarity_score"] = similarity
+                    result["collection"] = collection_name
+                    filtered_results.append(result)
+
+            results.extend(filtered_results)
+
+        # Sort by similarity (higher is better)
+        results.sort(key=lambda x: x.get("similarity_score", 0.0), reverse=True)
+
+        # Deduplicate based on text content
+        seen_texts = set()
+        unique_results = []
+        for result in results:
+            text_hash = hash(result["text"][:100])
+            if text_hash not in seen_texts:
+                seen_texts.add(text_hash)
+                unique_results.append(result)
+
         return unique_results[:limit]
 
     def get_collection_stats(self) -> dict:

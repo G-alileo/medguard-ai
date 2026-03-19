@@ -1,0 +1,530 @@
+"""
+Treatment Validator - Check if a drug is indicated for specific symptoms.
+"""
+
+import logging
+from typing import Optional
+
+from apps.data_access.repositories import DrugRepository
+
+logger = logging.getLogger(__name__)
+
+
+class TreatmentValidator:
+    """
+    Validates whether a drug is indicated for treating specific symptoms/conditions.
+    """
+
+    # Common drug-indication mappings (supplement database data)
+    # These are well-established OTC drug uses
+    KNOWN_TREATMENTS = {
+        "acetaminophen": [
+            "headache", "fever", "pain", "mild pain", "muscle pain",
+            "toothache", "backache", "arthritis", "menstrual pain",
+        ],
+        "ibuprofen": [
+            "headache", "fever", "pain", "inflammation", "muscle pain",
+            "toothache", "backache", "arthritis", "menstrual pain",
+            "swelling", "joint pain",
+        ],
+        "aspirin": [
+            "headache", "fever", "pain", "inflammation", "heart attack prevention",
+            "blood clot prevention", "arthritis",
+        ],
+        "naproxen": [
+            "headache", "pain", "inflammation", "arthritis", "muscle pain",
+            "menstrual pain", "gout",
+        ],
+        "diphenhydramine": [
+            "allergy", "allergic reaction", "insomnia", "sleep",
+            "itching", "hives", "rash", "pruritus", "cold symptoms",
+        ],
+        "loratadine": [
+            "allergy", "hay fever", "allergic rhinitis", "hives",
+            "itching", "sneezing", "runny nose",
+        ],
+        "omeprazole": [
+            "heartburn", "acid reflux", "gerd", "stomach ulcer",
+            "gastric ulcer", "indigestion",
+        ],
+        "ranitidine": [
+            "heartburn", "acid reflux", "stomach ulcer", "indigestion",
+        ],
+        "loperamide": [
+            "diarrhea", "loose stools", "traveler's diarrhea",
+        ],
+        "bisacodyl": [
+            "constipation",
+        ],
+        "guaifenesin": [
+            "cough", "chest congestion", "mucus",
+        ],
+        "dextromethorphan": [
+            "cough", "dry cough",
+        ],
+        "pseudoephedrine": [
+            "nasal congestion", "sinus congestion", "stuffy nose",
+        ],
+        "phenylephrine": [
+            "nasal congestion", "sinus congestion",
+        ],
+        "metformin": [
+            "diabetes", "type 2 diabetes", "high blood sugar",
+        ],
+        "lisinopril": [
+            "hypertension", "high blood pressure", "heart failure",
+        ],
+        "amlodipine": [
+            "hypertension", "high blood pressure", "angina", "chest pain",
+        ],
+        "atorvastatin": [
+            "high cholesterol", "hyperlipidemia", "cardiovascular prevention",
+        ],
+        "levothyroxine": [
+            "hypothyroidism", "low thyroid", "thyroid deficiency",
+        ],
+        "albuterol": [
+            "asthma", "bronchospasm", "wheezing", "shortness of breath",
+            "dyspnea", "breathing difficulty",
+        ],
+        "fluoxetine": [
+            "depression", "anxiety", "ocd", "panic disorder",
+        ],
+        "sertraline": [
+            "depression", "anxiety", "ptsd", "panic disorder", "ocd",
+        ],
+        "gabapentin": [
+            "nerve pain", "neuropathy", "seizures", "postherpetic neuralgia",
+        ],
+        "prednisone": [
+            "inflammation", "allergic reaction", "asthma", "arthritis",
+            "autoimmune conditions", "swelling",
+        ],
+        "amoxicillin": [
+            "bacterial infection", "ear infection", "sinus infection",
+            "respiratory infection", "urinary tract infection",
+        ],
+        "azithromycin": [
+            "bacterial infection", "respiratory infection", "bronchitis",
+            "pneumonia", "skin infection",
+        ],
+        "warfarin": [
+            "blood clot prevention", "atrial fibrillation", "dvt prevention",
+            "pulmonary embolism prevention",
+        ],
+        "albendazole": [
+            "deworming", "intestinal worms", "parasitic infection", "worm infection",
+            "roundworm", "hookworm", "whipworm", "strongyloides", "giardia",
+            "tapeworm", "pinworm", "ascaris", "trichuris", "parasites",
+        ],
+        "mebendazole": [
+            "deworming", "intestinal worms", "pinworm", "roundworm", "hookworm",
+            "whipworm", "parasitic infection", "worm infection",
+        ],
+        # Over-the-counter medications for comprehensive coverage
+        "cetirizine": [
+            "allergy", "allergic rhinitis", "hives", "hay fever", "itching",
+            "seasonal allergies", "pet allergies", "dust mites",
+        ],
+        "fexofenadine": [
+            "allergy", "allergic rhinitis", "hay fever", "seasonal allergies", "hives",
+        ],
+        "chlorpheniramine": [
+            "allergy", "allergic rhinitis", "cold symptoms", "runny nose", "sneezing",
+        ],
+        "dextromethorphan": [
+            "dry cough", "cough", "persistent cough", "non-productive cough",
+        ],
+        "guaifenesin": [
+            "wet cough", "chest congestion", "productive cough", "mucus", "phlegm",
+        ],
+        "pseudoephedrine": [
+            "nasal congestion", "stuffy nose", "sinus pressure", "blocked nose",
+            "head congestion",
+        ],
+        "phenylephrine": [
+            "nasal congestion", "stuffy nose", "sinus congestion", "blocked nose",
+        ],
+        "simethicone": [
+            "gas", "bloating", "flatulence", "stomach discomfort", "abdominal distension",
+        ],
+        "famotidine": [
+            "heartburn", "acid reflux", "stomach acid", "gerd", "indigestion",
+        ],
+        "lansoprazole": [
+            "heartburn", "acid reflux", "gerd", "stomach ulcer", "peptic ulcer",
+        ],
+        "docusate": [
+            "constipation", "hard stools", "difficulty passing stool",
+        ],
+        "polyethylene_glycol": [
+            "constipation", "chronic constipation", "occasional constipation",
+        ],
+        "ondansetron": [
+            "nausea", "vomiting", "motion sickness", "chemotherapy nausea",
+        ],
+        "dimenhydrinate": [
+            "motion sickness", "nausea", "vomiting", "dizziness", "vertigo",
+        ],
+        "hydrocortisone": [
+            "skin irritation", "rash", "eczema", "dermatitis", "itching", "inflammation",
+        ],
+        "miconazole": [
+            "yeast infection", "athlete's foot", "jock itch", "ringworm", "fungal infection",
+        ],
+        "clotrimazole": [
+            "yeast infection", "vaginal yeast infection", "thrush", "fungal infection",
+        ],
+        "terbinafine": [
+            "athlete's foot", "jock itch", "ringworm", "nail fungus", "fungal infection",
+        ],
+        "ketoconazole": [
+            "dandruff", "seborrheic dermatitis", "fungal infection", "scalp infection",
+        ],
+        "zinc_oxide": [
+            "diaper rash", "skin irritation", "minor burns", "chafing", "raw skin",
+        ],
+        "calamine": [
+            "poison ivy", "poison oak", "insect bites", "chickenpox", "itching", "rash",
+        ],
+        "benzocaine": [
+            "toothache", "dental pain", "oral pain", "mouth sores", "teething pain",
+        ],
+        "lidocaine": [
+            "localized pain", "skin numbing", "minor procedures", "injection site pain",
+        ],
+        "capsaicin": [
+            "arthritis pain", "muscle pain", "neuropathic pain", "joint pain",
+        ],
+        "menthol": [
+            "muscle pain", "minor aches", "cooling relief", "topical pain",
+        ],
+        "bismuth_subsalicylate": [
+            "upset stomach", "diarrhea", "nausea", "heartburn", "indigestion",
+        ],
+        "calcium_carbonate": [
+            "heartburn", "acid indigestion", "upset stomach", "calcium deficiency",
+        ],
+        "magnesium_hydroxide": [
+            "heartburn", "acid indigestion", "constipation", "stomach acid",
+        ],
+        "aluminum_hydroxide": [
+            "heartburn", "acid indigestion", "upset stomach", "phosphate binding",
+        ],
+        # Prescription medications commonly encountered
+        "hydrochlorothiazide": [
+            "hypertension", "high blood pressure", "edema", "fluid retention",
+        ],
+        "losartan": [
+            "hypertension", "high blood pressure", "heart failure", "kidney protection",
+        ],
+        "simvastatin": [
+            "high cholesterol", "hyperlipidemia", "cardiovascular prevention",
+        ],
+        "rosuvastatin": [
+            "high cholesterol", "hyperlipidemia", "cardiovascular prevention",
+        ],
+        "citalopram": [
+            "depression", "anxiety", "panic disorder", "mood disorders",
+        ],
+        "escitalopram": [
+            "depression", "anxiety", "generalized anxiety disorder", "panic disorder",
+        ],
+        "venlafaxine": [
+            "depression", "anxiety", "generalized anxiety disorder", "panic disorder",
+        ],
+        "duloxetine": [
+            "depression", "anxiety", "neuropathic pain", "fibromyalgia",
+        ],
+        "pregabalin": [
+            "neuropathic pain", "fibromyalgia", "seizures", "anxiety disorder",
+        ],
+        "tramadol": [
+            "moderate pain", "chronic pain", "acute pain", "post-operative pain",
+        ],
+        "meloxicam": [
+            "arthritis", "osteoarthritis", "rheumatoid arthritis", "pain", "inflammation",
+        ],
+        "celecoxib": [
+            "arthritis", "osteoarthritis", "rheumatoid arthritis", "pain",
+        ],
+        "cyclobenzaprine": [
+            "muscle spasms", "muscle pain", "back pain", "neck pain",
+        ],
+        "tizanidine": [
+            "muscle spasms", "muscle spasticity", "multiple sclerosis", "spinal cord injury",
+        ],
+        "topiramate": [
+            "seizures", "epilepsy", "migraine prevention", "mood stabilization",
+        ],
+        "sumatriptan": [
+            "migraine", "cluster headache", "severe headache",
+        ],
+        "rizatriptan": [
+            "migraine", "cluster headache", "severe headache",
+        ],
+        "zolpidem": [
+            "insomnia", "sleep difficulty", "trouble falling asleep",
+        ],
+        "trazodone": [
+            "insomnia", "depression", "sleep disorder", "anxiety",
+        ],
+        "melatonin": [
+            "insomnia", "jet lag", "sleep disorder", "circadian rhythm disorder",
+        ],
+    }
+
+    def __init__(self, drug_repo: Optional[DrugRepository] = None):
+        self.drug_repo = drug_repo or DrugRepository()
+        # Build reverse lookup (symptom → drugs)
+        self._symptom_to_drugs = self._build_symptom_index()
+
+    def _build_symptom_index(self) -> dict[str, list[str]]:
+        """Build index of symptoms to drugs that treat them."""
+        index = {}
+        for drug, symptoms in self.KNOWN_TREATMENTS.items():
+            for symptom in symptoms:
+                symptom_lower = symptom.lower()
+                if symptom_lower not in index:
+                    index[symptom_lower] = []
+                index[symptom_lower].append(drug)
+        return index
+
+    def does_drug_treat_symptom(
+        self,
+        drug_name: str,
+        symptom: str,
+    ) -> dict:
+        """
+        Check if a drug is indicated for treating a specific symptom.
+
+        LOOKUP ORDER (standardized):
+        1. MySQL Database (source of truth)
+        2. Vector Similarity (semantic understanding for layman terms)
+        3. Hardcoded Fallback (deprecated, for gaps in database)
+
+        Args:
+            drug_name: Canonical drug name
+            symptom: User's symptom (may not be medical terminology)
+
+        Returns:
+            Dict with:
+                - treats: bool
+                - confidence: "high" | "medium" | "low"
+                - matched_symptom: str (what symptom was matched)
+                - reason: str (explanation)
+        """
+        drug_lower = drug_name.lower().strip()
+        symptom_lower = symptom.lower().strip()
+
+        # ========================================
+        # STEP 1: MySQL DATABASE (Source of Truth)
+        # ========================================
+        db_result = self.drug_repo.does_drug_treat_symptom(drug_name, symptom)
+        if db_result.get("treats"):
+            return db_result
+
+        # ========================================
+        # STEP 2: VECTOR SIMILARITY (Semantic Understanding)
+        # ========================================
+        # First, get symptoms from database for this drug to compare
+        drug = self.drug_repo.get_by_name(drug_name)
+        db_indications = []
+        if drug:
+            db_indications = self.drug_repo.get_indications(drug)
+
+        # Combine database indications with hardcoded (for broader coverage)
+        all_symptoms = set(db_indications)
+        all_symptoms.update(self.KNOWN_TREATMENTS.get(drug_lower, []))
+
+        if all_symptoms:
+            similar_symptoms = self._find_similar_symptoms_vector(
+                symptom_lower, drug_lower, list(all_symptoms)
+            )
+            if similar_symptoms:
+                best_match = similar_symptoms[0]  # Highest similarity
+                return {
+                    "treats": True,
+                    "confidence": best_match["confidence"],
+                    "matched_symptom": best_match["matched_symptom"],
+                    "reason": f"{drug_name} treats {best_match['matched_symptom']}, semantically similar to '{symptom}' (similarity: {best_match['similarity']:.0%})",
+                    "source": "vector_similarity",
+                }
+
+        # ========================================
+        # STEP 3: HARDCODED FALLBACK (Deprecated)
+        # ========================================
+        # Only used when database is empty for this drug
+        if drug_lower in self.KNOWN_TREATMENTS:
+            known_symptoms = [s.lower() for s in self.KNOWN_TREATMENTS[drug_lower]]
+
+            # Exact match
+            if symptom_lower in known_symptoms:
+                return {
+                    "treats": True,
+                    "confidence": "medium",  # Lower than DB since fallback
+                    "matched_symptom": symptom_lower,
+                    "reason": f"{drug_name} is indicated for {symptom} (from fallback data)",
+                    "source": "hardcoded_fallback",
+                }
+
+        # ========================================
+        # NO MATCH - But don't over-penalize
+        # ========================================
+        # User might be using layman terms we don't recognize
+        alternative_drugs = self._symptom_to_drugs.get(symptom_lower, [])
+
+        return {
+            "treats": False,
+            "confidence": "low",
+            "matched_symptom": None,
+            "reason": f"No indication found for {drug_name} treating {symptom}, but chemist recommendation should be considered",
+            "alternatives": alternative_drugs[:3] if alternative_drugs else None,
+            "source": "no_match",
+        }
+
+    def _find_similar_symptoms_vector(
+        self, user_symptom: str, drug_name: str, known_symptoms: list = None
+    ) -> list:
+        """
+        Use vector embeddings to find symptoms similar to user's input.
+
+        This handles cases like:
+        - "fever" → finds "hay fever", "high temperature", etc.
+        - "itching" → finds "skin irritation", "pruritus", etc.
+        - "cough" → finds "dry cough", "productive cough", etc.
+
+        Args:
+            user_symptom: User's input symptom
+            drug_name: Drug name (for fallback lookup)
+            known_symptoms: List of known symptoms to compare against (from DB + hardcoded)
+        """
+        try:
+            from sentence_transformers import SentenceTransformer
+
+            # Get symptoms to compare against
+            if known_symptoms is None:
+                known_symptoms = self.KNOWN_TREATMENTS.get(drug_name.lower(), [])
+
+            if not known_symptoms:
+                return []
+
+            # Get embedding model (should be pre-loaded)
+            try:
+                model = SentenceTransformer('BAAI/bge-base-en-v1.5')
+            except Exception:
+                return self._fallback_symptom_matching(user_symptom, known_symptoms, drug_name)
+
+            # Generate embedding for user's symptom
+            user_embedding = model.encode(user_symptom, normalize_embeddings=True)
+
+            # Compare against all known symptoms for this drug
+            matches = []
+            for known_symptom in known_symptoms:
+                known_embedding = model.encode(known_symptom, normalize_embeddings=True)
+
+                # Cosine similarity (embeddings are normalized)
+                similarity = float(user_embedding @ known_embedding)
+
+                # Threshold for semantic similarity
+                # 0.7+ = very similar (fever ↔ high temperature)
+                # 0.5-0.7 = somewhat similar (fever ↔ hay fever)
+                # <0.5 = not similar enough
+                if similarity >= 0.5:
+                    confidence = "high" if similarity >= 0.75 else "medium"
+                    matches.append({
+                        "matched_symptom": known_symptom,
+                        "similarity": similarity,
+                        "confidence": confidence,
+                    })
+
+            # Sort by similarity (highest first)
+            matches.sort(key=lambda x: x["similarity"], reverse=True)
+            return matches
+
+        except Exception as e:
+            logger.warning(f"Vector similarity search failed: {e}")
+            # Fallback to basic matching - use passed symptoms or hardcoded
+            fallback_symptoms = known_symptoms or self.KNOWN_TREATMENTS.get(drug_name.lower(), [])
+            return self._fallback_symptom_matching(user_symptom, fallback_symptoms, drug_name)
+
+    def _fallback_symptom_matching(self, user_symptom: str, known_symptoms: list, drug_name: str) -> list:
+        """Fallback matching when vector search unavailable."""
+        matches = []
+        user_words = set(user_symptom.lower().split())
+
+        for known in known_symptoms:
+            known_lower = known.lower()
+            known_words = set(known_lower.split())
+
+            # Check for word overlap
+            common = user_words & known_words
+            if common:
+                # Calculate simple similarity
+                similarity = len(common) / max(len(user_words), len(known_words))
+                if similarity >= 0.3:  # Lower threshold for fallback
+                    matches.append({
+                        "matched_symptom": known,
+                        "similarity": similarity,
+                        "confidence": "medium" if similarity >= 0.5 else "low",
+                    })
+
+        matches.sort(key=lambda x: x["similarity"], reverse=True)
+        return matches
+
+    def validate_treatment_for_symptoms(
+        self,
+        drug_name: str,
+        symptoms: list[str],
+    ) -> dict:
+        """
+        Check if a drug is indicated for ANY of the given symptoms.
+        Uses vector search for semantic understanding via does_drug_treat_symptom.
+
+        Args:
+            drug_name: Canonical drug name
+            symptoms: List of normalized symptoms
+
+        Returns:
+            Dict with overall assessment and per-symptom results
+        """
+        if not symptoms:
+            return {
+                "overall_treats": False,
+                "confidence": "low",
+                "reason": "No symptoms provided",
+                "symptom_results": [],
+            }
+
+        results = []
+        any_treats = False
+        best_confidence = "low"
+        confidence_order = {"high": 3, "medium": 2, "low": 1}
+
+        for symptom in symptoms:
+            result = self.does_drug_treat_symptom(drug_name, symptom)
+            results.append({
+                "symptom": symptom,
+                **result,
+            })
+
+            if result["treats"]:
+                any_treats = True
+                if confidence_order.get(result["confidence"], 0) > confidence_order.get(best_confidence, 0):
+                    best_confidence = result["confidence"]
+
+        # Build reason
+        if any_treats:
+            treated = [r["symptom"] for r in results if r["treats"]]
+            reason = f"{drug_name} is indicated for: {', '.join(treated)}"
+        else:
+            reason = f"{drug_name} is not indicated for any of the reported symptoms"
+
+        return {
+            "overall_treats": any_treats,
+            "confidence": best_confidence,
+            "reason": reason,
+            "symptom_results": results,
+            "treated_symptoms": [r["symptom"] for r in results if r["treats"]],
+            "untreated_symptoms": [r["symptom"] for r in results if not r["treats"]],
+        }

@@ -66,7 +66,6 @@ class RiskEngine:
     - HIGH: 61+
     """
 
-    # Scoring weights
     WEIGHTS = {
         "no_treatment_indication": 40,
         "interaction_critical": 50,
@@ -77,14 +76,12 @@ class RiskEngine:
         "contraindication": 40,
     }
 
-    # Risk level thresholds
     THRESHOLDS = {
         "low_max": 25,
         "medium_max": 60,
     }
 
     def __init__(self):
-        # Configurable weights (can be overridden)
         self.weights = self.WEIGHTS.copy()
         self.thresholds = self.THRESHOLDS.copy()
 
@@ -100,7 +97,7 @@ class RiskEngine:
 
         Args:
             treatment_result: From TreatmentValidator.validate_treatment_for_symptoms()
-            interactions: From InteractionChecker.check_all_interactions()
+            interactions: From InteractionChecker.check_multiple_interactions()
             side_effect_analysis: From SideEffectAnalyzer.analyze_side_effect_overlap()
             contraindications: List of matched contraindications (future)
 
@@ -110,12 +107,10 @@ class RiskEngine:
         breakdown = RiskBreakdown()
         contraindications = contraindications or []
 
-        # 1. Treatment mismatch scoring
         if not treatment_result.get("overall_treats", True):
             breakdown.treatment_mismatch = self.weights["no_treatment_indication"]
             logger.debug(f"Treatment mismatch: +{breakdown.treatment_mismatch}")
 
-        # 2. Interaction scoring
         for interaction in interactions:
             severity = interaction.get("severity", "unknown")
             if severity == "critical":
@@ -134,24 +129,20 @@ class RiskEngine:
         )
         logger.debug(f"Interaction total: {breakdown.interaction_total}")
 
-        # 3. Side effect overlap scoring
         side_effect_risk = side_effect_analysis.get("risk_increase", 0)
         breakdown.side_effect_overlap = min(
             side_effect_risk, self.weights["side_effect_overlap_max"]
         )
         logger.debug(f"Side effect overlap: +{breakdown.side_effect_overlap}")
 
-        # 4. Contraindication scoring
         if contraindications:
             breakdown.contraindication = (
                 len(contraindications) * self.weights["contraindication"]
             )
             logger.debug(f"Contraindications: +{breakdown.contraindication}")
 
-        # Calculate total score
         total_score = breakdown.total
 
-        # Determine risk level
         if total_score <= self.thresholds["low_max"]:
             risk_level = RiskLevel.LOW
         elif total_score <= self.thresholds["medium_max"]:
@@ -159,7 +150,6 @@ class RiskEngine:
         else:
             risk_level = RiskLevel.HIGH
 
-        # Build factors list for explanation
         factors = self._build_factor_list(
             breakdown, treatment_result, interactions, side_effect_analysis
         )
@@ -195,7 +185,6 @@ class RiskEngine:
         """Build a list of factors contributing to the score."""
         factors = []
 
-        # Treatment factor
         if breakdown.treatment_mismatch > 0:
             factors.append({
                 "category": "treatment",
@@ -205,7 +194,6 @@ class RiskEngine:
                 "details": treatment_result.get("reason", ""),
             })
 
-        # Interaction factors
         for interaction in interactions:
             severity = interaction.get("severity", "unknown")
             factor_severity = "critical" if severity in ["critical", "high"] else "warning"
@@ -219,7 +207,6 @@ class RiskEngine:
                 "mechanism": interaction.get("mechanism", ""),
             })
 
-        # Side effect factor
         if breakdown.side_effect_overlap > 0:
             overlaps = side_effect_analysis.get("overlapping_symptoms", [])
             factors.append({
@@ -231,7 +218,6 @@ class RiskEngine:
                 "overlapping_symptoms": [o.get("user_symptom") for o in overlaps],
             })
 
-        # Sort by points (highest first)
         factors.sort(key=lambda x: x.get("points", 0), reverse=True)
 
         return factors
@@ -265,7 +251,6 @@ class RiskEngine:
         else:
             parts.append("This drug has significant risks in your situation.")
 
-        # Add breakdown details
         if breakdown["interactions"] > 0:
             parts.append(f"Drug interactions contribute {breakdown['interactions']} points to risk.")
         if breakdown["treatment_mismatch"] > 0:

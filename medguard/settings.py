@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     # MedGuard apps
     "apps.data_access",
     "apps.pipeline",
+    "apps.frontend",
     "medguard_app",
 ]
 
@@ -211,6 +212,9 @@ CHROMADB_COLLECTION_PREFIX = get_env("CHROMADB_COLLECTION_PREFIX", "medguard_")
 EMBEDDING_MODEL = get_env("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
 EMBEDDING_DEVICE = get_env("EMBEDDING_DEVICE", "cpu")
 EMBEDDING_BATCH_SIZE = int(get_env("EMBEDDING_BATCH_SIZE", "32"))
+
+# HuggingFace settings (for faster model downloads)
+HUGGINGFACE_TOKEN = get_env("HF_TOKEN", "")
 
 # DeepSeek API settings
 DEEPSEEK_API_KEY = get_env("DEEPSEEK_API_KEY", "")

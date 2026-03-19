@@ -260,7 +260,7 @@ class VectorLoader:
         Returns:
             Statistics dict
         """
-        from data_access.models import DrugInteraction
+        from apps.data_access.models import DrugInteraction
 
         stats = {"interactions_processed": 0, "chunks_created": 0, "errors": 0}
 
@@ -323,7 +323,7 @@ class VectorLoader:
         Returns:
             Statistics dict
         """
-        from data_access.models import DrugAdverseReaction
+        from apps.data_access.models import DrugAdverseReaction
 
         stats = {"reactions_processed": 0, "chunks_created": 0, "errors": 0}
 

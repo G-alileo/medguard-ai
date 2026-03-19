@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Check Your Medication{% endblock %}
+
+{% block content %}
+<div class="container container-narrow">
+    <!-- Page Header Section -->
+    <section class="page-section">
+        <div class="page-header">
+            <h1 class="page-title">Check Your Medication</h1>
+            <p class="page-subtitle">Enter your details below for AI-powered safety analysis</p>
+        </div>
+    </section>
+
+    <!-- Form Section -->
+    <section class="page-section">
+        <div class="glass-card form-card">
+            <form method="POST" action="{% url 'home' %}" id="evaluation-form">
+                {% csrf_token %}
+
+                <!-- Step 1: Symptoms -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <span class="step-badge">1</span>
+                        Your Symptoms
+                    </h3>
+                    <div class="form-group">
+                        <label for="id_symptoms" class="form-label">
+                            <i class="fas fa-notes-medical"></i> What symptoms are you experiencing?
+                        </label>
+                        <textarea
+                            name="symptoms"
+                            id="id_symptoms"
+                            class="form-textarea {% if form.symptoms.errors %}has-error{% endif %}"
+                            placeholder="e.g., headache, nausea, fever"
+                            rows="3"
+                            required
+                        >{{ form.symptoms.value|default:'' }}</textarea>
+                        <span class="form-help">Describe your current symptoms, one per line or comma-separated</span>
+                        {% if form.symptoms.errors %}
+                        <div class="form-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ form.symptoms.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- Step 2: Medication -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <span class="step-badge">2</span>
+                        Medication Information
+                    </h3>
+                    <div class="form-group">
+                        <label for="id_drug" class="form-label">
+                            <i class="fas fa-pills"></i> What medication did your chemist prescribe?
+                        </label>
+                        <input
+                            type="text"
+                            name="drug"
+                            id="id_drug"
+                            class="form-input {% if form.drug.errors %}has-error{% endif %}"
+                            placeholder="e.g., ibuprofen"
+                            value="{{ form.drug.value|default:'' }}"
+                            required
+                        >
+                        <span class="form-help">Enter the exact medication name</span>
+                        {% if form.drug.errors %}
+                        <div class="form-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ form.drug.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- Step 3: Existing Medications -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <span class="step-badge">3</span>
+                        Current Medications
+                        <span class="optional-badge">Optional</span>
+                    </h3>
+                    <div class="form-group">
+                        <label for="id_existing_medications" class="form-label">
+                            <i class="fas fa-prescription-bottle"></i> Are you currently taking any other medications?
+                        </label>
+                        <textarea
+                            name="existing_medications"
+                            id="id_existing_medications"
+                            class="form-textarea {% if form.existing_medications.errors %}has-error{% endif %}"
+                            placeholder="e.g., aspirin, lisinopril, metformin"
+                            rows="3"
+                        >{{ form.existing_medications.value|default:'' }}</textarea>
+                        <span class="form-help">List any medications you are currently taking (helps check for interactions)</span>
+                        {% if form.existing_medications.errors %}
+                        <div class="form-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ form.existing_medications.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary btn-submit btn-large">
+                        <i class="fas fa-search"></i> Analyze Medication Safety
+                    </button>
+                    <p class="form-note">
+                        <i class="fas fa-lock"></i> Your information is processed securely and not stored
+                    </p>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

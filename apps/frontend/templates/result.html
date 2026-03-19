@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Risk Assessment Results{% endblock %}
+
+{% block content %}
+<div class="container container-results">
+    <!-- Top Section: Risk Level and Score -->
+    <section class="result-header">
+        <div class="risk-display">
+            <span class="risk-pill {{ result.risk_level|lower }}">
+                {{ result.risk_level }} RISK
+            </span>
+            <div class="risk-score">
+                <span class="score-value">{{ result.risk_score }}</span>
+                <span class="score-max">/100</span>
+            </div>
+        </div>
+        <div class="drug-info">
+            <span class="drug-label">Evaluating:</span>
+            <span class="drug-name">{{ result.input.drug }}</span>
+        </div>
+    </section>
+
+    <!-- Key Findings Grid -->
+    <section class="findings-section">
+        <h2 class="section-title">Key Findings</h2>
+        <div class="grid-3">
+            <!-- Treats Symptom Card -->
+            <div class="glass-card finding-card">
+                <div class="finding-icon {% if result.findings.treats_symptom %}positive{% else %}negative{% endif %}">
+                    {% if result.findings.treats_symptom %}
+                    <i class="fas fa-check-circle"></i>
+                    {% else %}
+                    <i class="fas fa-times-circle"></i>
+                    {% endif %}
+                </div>
+                <h3 class="finding-title">Treats Symptom</h3>
+                <p class="finding-value">
+                    {% if result.findings.treats_symptom %}Yes{% else %}No{% endif %}
+                </p>
+            </div>
+
+            <!-- Interactions Card -->
+            <div class="glass-card finding-card">
+                <div class="finding-icon {% if result.findings.interactions_found > 0 %}warning{% else %}neutral{% endif %}">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="finding-title">Interactions</h3>
+                <p class="finding-value">
+                    {% if result.findings.interactions_found > 0 %}
+                        {{ result.findings.interactions_found }} found
+                    {% else %}
+                        None found
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Side Effects Card -->
+            <div class="glass-card finding-card">
+                <div class="finding-icon {% if result.findings.side_effect_warnings %}warning{% else %}neutral{% endif %}">
+                    <i class="fas fa-notes-medical"></i>
+                </div>
+                <h3 class="finding-title">Side Effect Warnings</h3>
+                <p class="finding-value">
+                    {% if result.findings.side_effect_warnings %}
+                        {{ result.findings.side_effect_warnings|join:", " }}
+                    {% else %}
+                        None identified
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Explanation Card -->
+    <section class="explanation-section">
+        <div class="glass-card explanation-card">
+            <h2 class="card-title">
+                <i class="fas fa-lightbulb"></i> Why This Risk Level
+            </h2>
+            <p class="explanation-text">{{ result.explanation }}</p>
+        </div>
+    </section>
+
+    <!-- Recommendation Card -->
+    <section class="recommendation-section">
+        <div class="glass-card recommendation-card {{ result.risk_level|lower }}">
+            <h2 class="card-title">
+                <i class="fas fa-clipboard-list"></i> Recommendation
+            </h2>
+            <p class="recommendation-text">{{ result.recommendation.message }}</p>
+        </div>
+    </section>
+
+    <!-- Alternative Medications Section -->
+    {% if result.alternatives %}
+    <section class="alternatives-section">
+        <h2 class="section-title">Alternative Medications</h2>
+        <div class="grid-2">
+            {% for alternative in result.alternatives %}
+            <div class="glass-card alternative-card">
+                <div class="alternative-header">
+                    <h3 class="alternative-name">{{ alternative.name }}</h3>
+                    <span class="alternative-generic">({{ alternative.generic_name }})</span>
+                    <div class="compatibility-score">
+                        <span class="score-label">Match:</span>
+                        <span class="score-value">{{ alternative.similarity_score|floatformat:0 }}%</span>
+                    </div>
+                </div>
+                <div class="alternative-reason">
+                    <i class="fas fa-info-circle"></i>
+                    {{ alternative.reason }}
+                </div>
+                <div class="alternative-details">
+                    <div class="advantages">
+                        <h4><i class="fas fa-plus-circle"></i> Advantages:</h4>
+                        <ul>
+                            {% for advantage in alternative.advantages %}
+                            <li>{{ advantage }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="considerations">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Considerations:</h4>
+                        <ul>
+                            {% for consideration in alternative.considerations %}
+                            <li>{{ consideration }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="alternatives-disclaimer">
+            <i class="fas fa-stethoscope"></i>
+            <strong>Important:</strong> Always consult your healthcare provider before switching medications.
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Input Summary (Collapsible) -->
+    <section class="input-summary-section">
+        <details class="glass-card input-summary">
+            <summary class="summary-header">
+                <i class="fas fa-list-ul"></i> Your Input Summary
+            </summary>
+            <div class="summary-content">
+                <div class="summary-item">
+                    <strong>Symptoms:</strong>
+                    <span>{{ result.input.symptoms|join:", " }}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Medication:</strong>
+                    <span>{{ result.input.drug }}</span>
+                </div>
+                {% if result.input.existing_medications %}
+                <div class="summary-item">
+                    <strong>Existing Medications:</strong>
+                    <span>{{ result.input.existing_medications|join:", " }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </details>
+    </section>
+
+    <!-- Action Buttons -->
+    <section class="actions-section">
+        <div class="action-buttons">
+            <a href="{% url 'home' %}" class="btn-secondary">
+                <i class="fas fa-redo"></i> Check Another
+            </a>
+            <a href="{% url 'how_it_works' %}" class="btn-text">
+                <i class="fas fa-info-circle"></i> View How It Works
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}

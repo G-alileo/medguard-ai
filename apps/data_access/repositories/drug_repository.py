@@ -12,6 +12,9 @@ from apps.data_access.models import (
     DrugIndication,
     DrugAdverseReaction,
     Contraindication,
+    DrugAlternative,
+    Indication,
+    AdverseReaction,
 )
 from apps.pipeline.processing import normalize_drug_name
 
@@ -138,7 +141,7 @@ class DrugRepository:
 
     def get_drugs_with_most_interactions(self, limit: int = 10) -> list[dict]:
         """Get drugs with the most known interactions."""
-        from data_access.models import DrugInteraction
+        from apps.data_access.models import DrugInteraction
 
         # Count interactions for each drug
         drug_counts = (
@@ -161,3 +164,132 @@ class DrugRepository:
     def get_drugs_by_rxcui(self, rxcui: str) -> Optional[Drug]:
         """Get a drug by its RxNorm CUI."""
         return Drug.objects.filter(rxcui=rxcui).first()
+
+    def get_alternatives(self, drug: Drug, limit: int = 5) -> list[dict]:
+        """
+        Get alternative drugs for a given drug.
+
+        Returns:
+            List of dicts with alternative drug info
+        """
+        alternatives = (
+            DrugAlternative.objects
+            .filter(original_drug=drug)
+            .select_related("alternative_drug")
+            .order_by("-similarity_score")[:limit]
+        )
+
+        return [
+            {
+                "name": alt.alternative_drug.canonical_name,
+                "reason": alt.reason,
+                "advantages": alt.get_advantages_list(),
+                "considerations": alt.get_considerations_list(),
+                "similarity_score": alt.similarity_score,
+                "is_otc": alt.is_otc,
+            }
+            for alt in alternatives
+        ]
+
+    def does_drug_treat_symptom(self, drug_name: str, symptom: str) -> dict:
+        """
+        Check if a drug treats a specific symptom using database.
+
+        Args:
+            drug_name: Drug canonical name
+            symptom: Symptom/condition to check
+
+        Returns:
+            Dict with treats (bool), confidence, reason
+        """
+        drug = self.get_by_name(drug_name)
+        if not drug:
+            return {
+                "treats": False,
+                "confidence": "low",
+                "reason": f"Drug '{drug_name}' not found in database",
+            }
+
+        symptom_lower = symptom.lower().strip()
+
+        # Direct match on indication name
+        indication_match = (
+            DrugIndication.objects
+            .filter(drug=drug)
+            .filter(
+                Q(indication__name_normalized__icontains=symptom_lower) |
+                Q(indication__name__icontains=symptom)
+            )
+            .select_related("indication")
+            .first()
+        )
+
+        if indication_match:
+            return {
+                "treats": True,
+                "confidence": "high" if indication_match.confidence >= 0.8 else "medium",
+                "matched_symptom": indication_match.indication.name,
+                "reason": f"Database indicates {drug_name} treats {indication_match.indication.name}",
+                "source": indication_match.source,
+            }
+
+        return {
+            "treats": False,
+            "confidence": "medium",
+            "reason": f"No database indication for {drug_name} treating {symptom}",
+        }
+
+    def get_side_effects_list(self, drug_name: str) -> list[str]:
+        """
+        Get side effects as simple list of strings.
+
+        Args:
+            drug_name: Drug canonical name
+
+        Returns:
+            List of side effect names
+        """
+        drug = self.get_by_name(drug_name)
+        if not drug:
+            return []
+
+        return list(
+            DrugAdverseReaction.objects
+            .filter(drug=drug)
+            .select_related("reaction")
+            .values_list("reaction__preferred_term", flat=True)
+            .distinct()
+        )
+
+    def get_drugs_for_symptom(self, symptom: str, limit: int = 10) -> list[dict]:
+        """
+        Get drugs that treat a specific symptom.
+
+        Args:
+            symptom: Symptom/condition name
+            limit: Maximum results
+
+        Returns:
+            List of drugs that treat this symptom
+        """
+        symptom_lower = symptom.lower().strip()
+
+        drug_indications = (
+            DrugIndication.objects
+            .filter(
+                Q(indication__name_normalized__icontains=symptom_lower) |
+                Q(indication__name__icontains=symptom)
+            )
+            .select_related("drug", "indication")
+            .order_by("-confidence")[:limit]
+        )
+
+        return [
+            {
+                "drug": di.drug.canonical_name,
+                "indication": di.indication.name,
+                "confidence": di.confidence,
+                "source": di.source,
+            }
+            for di in drug_indications
+        ]

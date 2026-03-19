@@ -13,73 +13,60 @@ class InputNormalizer:
     Normalizes user inputs to canonical forms for consistent processing.
     """
 
-    # Symptom synonyms mapping (common variations → canonical)
     SYMPTOM_MAPPINGS = {
-        # Head-related
         "head pain": "headache",
         "head ache": "headache",
         "migraine": "headache",
         "tension headache": "headache",
         "throbbing head": "headache",
         "skull pain": "headache",
-        # Stomach-related
         "stomach ache": "abdominal pain",
         "stomach pain": "abdominal pain",
         "tummy ache": "abdominal pain",
         "belly pain": "abdominal pain",
         "gut pain": "abdominal pain",
         "stomachache": "abdominal pain",
-        # Nausea
         "feeling sick": "nausea",
         "queasy": "nausea",
         "sick to stomach": "nausea",
         "want to vomit": "nausea",
-        # Fever
         "high temperature": "fever",
         "febrile": "fever",
         "pyrexia": "fever",
         "running a temperature": "fever",
-        # Pain general
         "ache": "pain",
         "soreness": "pain",
         "hurting": "pain",
-        # Fatigue
         "tired": "fatigue",
         "exhausted": "fatigue",
         "tiredness": "fatigue",
         "exhaustion": "fatigue",
         "lack of energy": "fatigue",
         "lethargy": "fatigue",
-        # Dizziness
         "dizzy": "dizziness",
         "lightheaded": "dizziness",
         "light headed": "dizziness",
         "vertigo": "dizziness",
         "spinning sensation": "dizziness",
-        # Breathing
         "shortness of breath": "dyspnea",
         "difficulty breathing": "dyspnea",
         "breathlessness": "dyspnea",
         "trouble breathing": "dyspnea",
         "can't breathe": "dyspnea",
-        # Skin
         "skin rash": "rash",
         "skin irritation": "rash",
         "hives": "rash",
         "itchy skin": "pruritus",
         "itching": "pruritus",
-        # Sleep
         "can't sleep": "insomnia",
         "sleeplessness": "insomnia",
         "trouble sleeping": "insomnia",
-        # Mood
         "sad": "depression",
         "feeling down": "depression",
         "low mood": "depression",
         "anxious": "anxiety",
         "worried": "anxiety",
         "nervousness": "anxiety",
-        # Digestive
         "loose stools": "diarrhea",
         "runny stomach": "diarrhea",
         "the runs": "diarrhea",
@@ -88,14 +75,12 @@ class InputNormalizer:
         "throwing up": "vomiting",
         "puking": "vomiting",
         "being sick": "vomiting",
-        # Cardiovascular
         "fast heartbeat": "tachycardia",
         "racing heart": "tachycardia",
         "heart pounding": "palpitations",
         "heart fluttering": "palpitations",
         "high blood pressure": "hypertension",
         "low blood pressure": "hypotension",
-        # Cough/Cold
         "coughing": "cough",
         "runny nose": "rhinorrhea",
         "stuffy nose": "nasal congestion",
@@ -106,7 +91,6 @@ class InputNormalizer:
 
     def __init__(self):
         self.drug_normalizer = get_normalizer()
-        # Build reverse lookup for faster matching
         self._symptom_lookup = {k.lower(): v for k, v in self.SYMPTOM_MAPPINGS.items()}
 
     def normalize_symptom(self, symptom: str) -> str:
@@ -122,21 +106,17 @@ class InputNormalizer:
         if not symptom:
             return ""
 
-        # Clean input
         symptom_clean = symptom.strip().lower()
         symptom_clean = re.sub(r"[^\w\s]", "", symptom_clean)
         symptom_clean = " ".join(symptom_clean.split())
 
-        # Direct lookup
         if symptom_clean in self._symptom_lookup:
             return self._symptom_lookup[symptom_clean]
 
-        # Partial match - check if any key is contained in the symptom
         for key, canonical in self._symptom_lookup.items():
             if key in symptom_clean:
                 return canonical
 
-        # No mapping found - return cleaned version
         return symptom_clean
 
     def normalize_drug_name(self, drug_name: str) -> NormalizationResult:
@@ -222,13 +202,10 @@ class InputNormalizer:
         Returns:
             Dict with normalized versions of all inputs
         """
-        # Normalize symptoms
         normalized_symptoms = self.normalize_symptoms_list(symptoms)
 
-        # Normalize proposed drug
         drug_result = self.normalize_drug_name(drug)
 
-        # Normalize existing drugs
         normalized_existing = self.normalize_drug_list(existing_drugs)
 
         return {
@@ -247,7 +224,6 @@ class InputNormalizer:
         }
 
 
-# Singleton instance
 _normalizer: Optional[InputNormalizer] = None
 
 

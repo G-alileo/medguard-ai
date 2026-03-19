@@ -9,6 +9,7 @@ from .interaction import DrugInteraction
 from .contraindication import Contraindication
 from .event_report import AdverseEventReport, EventReportDrug, EventReportReaction
 from .meddra import MedDRACode
+from .alternative import DrugAlternative
 
 __all__ = [
     # Drug
@@ -30,4 +31,6 @@ __all__ = [
     "EventReportReaction",
     # MedDRA
     "MedDRACode",
+    # Alternatives
+    "DrugAlternative",
 ]

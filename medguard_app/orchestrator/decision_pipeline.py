@@ -13,6 +13,7 @@ from ..services.interaction_checker import InteractionChecker
 from ..services.side_effect_analyzer import SideEffectAnalyzer
 from ..services.risk_engine import RiskEngine
 from ..services.llm_service import DeepSeekService, get_llm_service
+from ..services.drug_alternatives import DrugAlternativesService
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class DecisionPipeline:
         risk_engine: Optional[RiskEngine] = None,
         vector_store: Optional[ChromaClient] = None,
         llm_service: Optional[DeepSeekService] = None,
+        drug_alternatives: Optional[DrugAlternativesService] = None,
     ):
         """
         Initialize the pipeline with all services.
@@ -49,26 +51,23 @@ class DecisionPipeline:
         """
         self.normalizer = normalizer or get_input_normalizer()
 
-        # Initialize repositories
         self.drug_repo = DrugRepository()
         self.interaction_repo = InteractionRepository()
 
-        # Initialize services
         self.treatment_validator = treatment_validator or TreatmentValidator(self.drug_repo)
         self.interaction_checker = interaction_checker or InteractionChecker(
             self.interaction_repo, self.drug_repo
         )
         self.side_effect_analyzer = side_effect_analyzer or SideEffectAnalyzer(self.drug_repo)
         self.risk_engine = risk_engine or RiskEngine()
+        self.drug_alternatives = drug_alternatives or DrugAlternativesService()
 
-        # Vector store (may not be available)
         try:
             self.vector_store = vector_store or get_chroma_client()
         except Exception as e:
             logger.warning(f"Vector store not available: {e}")
             self.vector_store = None
 
-        # LLM service (may use mock mode)
         self.llm_service = llm_service or get_llm_service()
 
     def evaluate(
@@ -103,21 +102,17 @@ class DecisionPipeline:
         logger.debug(f"Inputs: symptoms={symptoms}, drug={proposed_drug}, existing={existing_drugs}")
 
         try:
-            # Step 1: Normalize all inputs
             normalized = self._normalize_inputs(symptoms, proposed_drug, existing_drugs)
             logger.debug(f"Normalized inputs: {normalized}")
 
-            # Step 2: Check if drug exists
             drug_exists = self._validate_drug_exists(normalized["drug"]["canonical"])
 
-            # Step 3: Validate treatment
             treatment_result = self._validate_treatment(
                 normalized["drug"]["canonical"],
                 normalized["symptoms_canonical"],
             )
             logger.debug(f"Treatment result: {treatment_result}")
 
-            # Step 4: Check interactions
             interactions = self._check_interactions(
                 normalized["drug"]["canonical"],
                 normalized["existing_drugs_canonical"],
@@ -128,30 +123,26 @@ class DecisionPipeline:
             )
             logger.debug(f"Interactions found: {len(interactions)}")
 
-            # Step 5: Analyze side effects
             side_effect_analysis = self._analyze_side_effects(
                 normalized["drug"]["canonical"],
                 normalized["symptoms_canonical"],
             )
             logger.debug(f"Side effect overlap: {side_effect_analysis.get('overlapping_count', 0)}")
 
-            # Step 6: Calculate risk score (DETERMINISTIC)
             risk_result = self.risk_engine.calculate_risk_score(
                 treatment_result=treatment_result,
                 interactions=interactions,
                 side_effect_analysis=side_effect_analysis,
-                contraindications=[],  # Future enhancement
+                contraindications=[],
             )
             logger.info(f"Risk score: {risk_result['score']} ({risk_result['level']})")
 
-            # Step 7: Retrieve context (if vector store available)
             context = self._retrieve_context(
                 normalized["drug"]["canonical"],
                 normalized["symptoms_canonical"],
                 normalized["existing_drugs_canonical"],
             )
 
-            # Step 8: Build findings dict for LLM
             findings = {
                 "treatment": treatment_result,
                 "interactions": interactions,
@@ -159,7 +150,6 @@ class DecisionPipeline:
                 "side_effects": side_effect_analysis,
             }
 
-            # Step 9: Generate explanation (LLM or mock)
             explanation = ""
             if risk_result["score"] > 0:
                 explanation = self.llm_service.generate_explanation(
@@ -169,44 +159,54 @@ class DecisionPipeline:
                     risk_level=risk_result["level"],
                 )
 
-            # Step 10: Build recommendation
             recommendation = self.risk_engine.get_recommendation(risk_result["level"])
 
-            # Step 11: Build final result
+            alternatives = self._find_drug_alternatives(
+                normalized["drug"]["canonical"],
+                normalized["symptoms_canonical"],
+                normalized["existing_drugs_canonical"]
+            )
+
             elapsed = (datetime.now() - start_time).total_seconds()
 
             result = {
-                # Core assessment
                 "risk_score": risk_result["score"],
                 "risk_level": risk_result["level"],
                 "explanation": explanation,
 
-                # Detailed findings
                 "findings": {
                     "drug_found": drug_exists,
                     "treats_symptom": treatment_result.get("overall_treats", False),
                     "treatment_confidence": treatment_result.get("confidence", "unknown"),
                     "interactions_found": len(interactions),
                     "interaction_risk_level": interaction_summary.get("risk_level", "none"),
-                    "side_effect_warnings": side_effect_analysis.get("overlapping_symptoms", []),
+                    "side_effect_warnings": self._format_side_effect_warnings(side_effect_analysis),
                     "side_effect_risk": side_effect_analysis.get("risk_increase", 0),
                 },
 
-                # Score breakdown
                 "score_breakdown": risk_result.get("breakdown", {}),
                 "risk_factors": risk_result.get("factors", []),
 
-                # Recommendation
                 "recommendation": recommendation,
 
-                # Normalized inputs (for reference)
+                "alternatives": [
+                    {
+                        "name": alt.name,
+                        "generic_name": alt.generic_name,
+                        "similarity_score": alt.similarity_score,
+                        "advantages": alt.advantages,
+                        "considerations": alt.considerations,
+                        "reason": alt.reason
+                    }
+                    for alt in alternatives
+                ],
+
                 "normalized_inputs": {
                     "drug": normalized["drug"]["canonical"],
                     "symptoms": normalized["symptoms_canonical"],
                     "existing_drugs": normalized["existing_drugs_canonical"],
                 },
 
-                # Metadata
                 "metadata": {
                     "evaluation_id": evaluation_id,
                     "timestamp": start_time.isoformat(),
@@ -243,7 +243,7 @@ class DecisionPipeline:
 
     def _check_interactions(self, proposed_drug: str, existing_drugs: list[str]) -> list[dict]:
         """Check for drug interactions."""
-        return self.interaction_checker.check_all_interactions(proposed_drug, existing_drugs)
+        return self.interaction_checker.check_multiple_interactions(proposed_drug, existing_drugs)
 
     def _analyze_side_effects(self, drug_name: str, symptoms: list[str]) -> dict:
         """Analyze side effect overlap with symptoms."""
@@ -255,21 +255,40 @@ class DecisionPipeline:
         symptoms: list[str],
         existing_drugs: list[str],
     ) -> list[dict]:
-        """Retrieve relevant context from vector store."""
+        """Retrieve relevant context from vector store using symptoms AND drug information."""
         if not self.vector_store:
             return []
 
         try:
-            # Get context for the drug
-            context = self.vector_store.get_context_for_drug(
+            context = []
+
+            if symptoms:
+                symptoms_query = " ".join(symptoms) + " symptoms causes treatment appropriate medication"
+                symptom_context = self.vector_store.search_medical_context(
+                    query=symptoms_query,
+                    limit=3,
+                    threshold=0.6,
+                )
+                context.extend(symptom_context)
+
+            if symptoms:
+                drug_symptom_query = f"{drug} for {' '.join(symptoms)} treatment indication"
+                drug_context = self.vector_store.search_medical_context(
+                    query=drug_symptom_query,
+                    limit=2,
+                    threshold=0.7,
+                )
+                context.extend(drug_context)
+
+            general_drug_context = self.vector_store.get_context_for_drug(
                 drug=drug,
                 query_type="interactions" if existing_drugs else "usage",
-                limit=3,
+                limit=2,
             )
+            context.extend(general_drug_context)
 
-            # Also search for interaction context if there are existing drugs
             if existing_drugs:
-                for existing in existing_drugs[:2]:  # Limit to 2 drugs
+                for existing in existing_drugs[:2]:
                     interaction_context = self.vector_store.search_interactions(
                         drug1=drug,
                         drug2=existing,
@@ -277,19 +296,71 @@ class DecisionPipeline:
                     )
                     context.extend(interaction_context)
 
-            # Deduplicate and return
             seen = set()
             unique_context = []
             for item in context:
                 text_hash = hash(item.get("text", "")[:100])
                 if text_hash not in seen:
                     seen.add(text_hash)
+                    if "similarity_score" not in item and "distance" in item:
+                        item["similarity_score"] = 1.0 - item["distance"]
                     unique_context.append(item)
 
-            return unique_context[:5]  # Max 5 context items
+            unique_context.sort(
+                key=lambda x: x.get("similarity_score", 0.5),
+                reverse=True
+            )
+
+            return unique_context[:6]
 
         except Exception as e:
             logger.warning(f"Error retrieving context: {e}")
+            return []
+
+    def _find_drug_alternatives(
+        self,
+        drug_name: str,
+        symptoms: list[str],
+        existing_drugs: list[str],
+    ) -> list:
+        """Find alternative medications for the given drug."""
+        try:
+            return self.drug_alternatives.find_alternatives(
+                drug_name=drug_name,
+                symptoms=symptoms,
+                existing_medications=existing_drugs
+            )
+        except Exception as e:
+            logger.warning(f"Error finding drug alternatives: {e}")
+            return []
+
+    def _format_side_effect_warnings(self, side_effect_analysis: dict) -> list[str]:
+        """Format side effect warnings for clean display."""
+        try:
+            overlapping_symptoms = side_effect_analysis.get("overlapping_symptoms", [])
+
+            if not overlapping_symptoms:
+                return []
+
+            warning_symptoms = []
+            seen_symptoms = set()
+
+            for overlap in overlapping_symptoms:
+                user_symptom = overlap.get("symptom", "")
+                drug_side_effect = overlap.get("matched_side_effect", "")
+                match_type = overlap.get("match_type", "")
+
+                if user_symptom.lower() not in seen_symptoms:
+                    seen_symptoms.add(user_symptom.lower())
+                    if match_type == "exact":
+                        warning_symptoms.append(f"May worsen {user_symptom}")
+                    else:
+                        warning_symptoms.append(f"May affect {user_symptom} (related to {drug_side_effect})")
+
+            return warning_symptoms[:3]
+
+        except Exception as e:
+            logger.warning(f"Error formatting side effect warnings: {e}")
             return []
 
     def _build_error_result(
@@ -326,7 +397,6 @@ class DecisionPipeline:
         }
 
 
-# Singleton instance
 _pipeline: Optional[DecisionPipeline] = None
 
 

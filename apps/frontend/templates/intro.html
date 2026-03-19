@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}AI-Powered Medication Safety{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="hero-section glass-card">
+        <div class="hero-icon">
+            <i class="fas fa-plus-square fa-rotate-45"></i>
+        </div>
+        <h1 class="hero-headline">AI-Powered Medication Safety</h1>
+        <p class="hero-subhead">Check if your chemist-prescribed medication is right for you</p>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="problem-section">
+        <div class="grid-2">
+            <div class="glass-card mini-card">
+                <div class="mini-card-icon">
+                    <i class="fas fa-pills"></i>
+                </div>
+                <h3 class="mini-card-title">Self-medication is common in Kenya</h3>
+                <p class="mini-card-text">Many people rely on chemist recommendations without a full medical consultation</p>
+            </div>
+            <div class="glass-card mini-card">
+                <div class="mini-card-icon">
+                    <i class="fas fa-user-doctor"></i>
+                </div>
+                <h3 class="mini-card-title">Chemists prescribe without full history</h3>
+                <p class="mini-card-text">Drug interactions and side effects may go unchecked without complete patient information</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Steps -->
+    <section class="steps-section">
+        <h2 class="section-title">How It Works</h2>
+        <div class="grid-3">
+            <div class="glass-card step-card">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <i class="fas fa-keyboard"></i>
+                </div>
+                <h3 class="step-title">Enter your symptoms and medications</h3>
+                <p class="step-text">Tell us what you're experiencing and what was prescribed</p>
+            </div>
+            <div class="glass-card step-card">
+                <div class="step-number">2</div>
+                <div class="step-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="step-title">AI analyzes against medical data</h3>
+                <p class="step-text">Our system checks FDA databases and drug interactions</p>
+            </div>
+            <div class="glass-card step-card">
+                <div class="step-number">3</div>
+                <div class="step-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3 class="step-title">Get clear risk assessment</h3>
+                <p class="step-text">Receive an easy-to-understand safety evaluation</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <a href="{% url 'home' %}" class="btn-primary cta-button">
+            <i class="fas fa-stethoscope"></i> Check Your Medication
+        </a>
+    </section>
+</div>
+{% endblock %}

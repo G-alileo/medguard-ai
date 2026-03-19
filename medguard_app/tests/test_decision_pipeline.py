@@ -54,7 +54,7 @@ class TestDecisionPipeline:
     def mock_interaction_checker(self):
         """Create a mock interaction checker."""
         checker = Mock(spec=InteractionChecker)
-        checker.check_all_interactions.return_value = []
+        checker.check_multiple_interactions.return_value = []
         checker.get_interaction_summary.return_value = {
             "total_interactions": 0,
             "risk_level": "none",
@@ -183,7 +183,7 @@ class TestDecisionPipeline:
         """Test evaluation with a high severity drug interaction."""
         # Create checker that returns high severity interaction
         mock_checker = Mock(spec=InteractionChecker)
-        mock_checker.check_all_interactions.return_value = [
+        mock_checker.check_multiple_interactions.return_value = [
             {
                 "proposed_drug": "warfarin",
                 "existing_drug": "aspirin",
@@ -234,7 +234,7 @@ class TestDecisionPipeline:
         """Test evaluation with a critical drug interaction."""
         # Create checker that returns critical interaction
         mock_checker = Mock(spec=InteractionChecker)
-        mock_checker.check_all_interactions.return_value = [
+        mock_checker.check_multiple_interactions.return_value = [
             {
                 "proposed_drug": "drug_a",
                 "existing_drug": "drug_b",
@@ -291,7 +291,7 @@ class TestDecisionPipeline:
 
         # High severity interaction
         mock_checker = Mock(spec=InteractionChecker)
-        mock_checker.check_all_interactions.return_value = [
+        mock_checker.check_multiple_interactions.return_value = [
             {
                 "proposed_drug": "drug_a",
                 "existing_drug": "drug_b",

@@ -86,14 +86,117 @@ class DrugNormalizer:
         # Diuretics
         "microzide": "hydrochlorothiazide",
         "hctz": "hydrochlorothiazide",
+        # Antiparasitics
+        "albendazole": "albendazole",
+        "mebendazole": "mebendazole",
+        "vermox": "mebendazole",
+        # Allergy medications
+        "zyrtec": "cetirizine",
+        "allegra": "fexofenadine",
+        "claritin": "loratadine",
+        "benadryl": "diphenhydramine",
+        "chlor-trimeton": "chlorpheniramine",
+        # Cough and cold
+        "robitussin": "dextromethorphan",
+        "mucinex": "guaifenesin",
+        "sudafed": "pseudoephedrine",
+        "afrin": "oxymetazoline",
+        # Stomach medications
+        "pepcid": "famotidine",
+        "prevacid": "lansoprazole",
+        "pepto-bismol": "bismuth_subsalicylate",
+        "mylanta": "aluminum_hydroxide",
+        "tums": "calcium_carbonate",
+        "rolaids": "magnesium_hydroxide",
+        "gas-x": "simethicone",
+        "immodium": "loperamide",
+        "dulcolax": "bisacodyl",
+        "colace": "docusate",
+        "miralax": "polyethylene_glycol",
+        # Pain and fever
+        "excedrin": "acetaminophen",
+        "midol": "ibuprofen",
+        # Topical medications
+        "neosporin": "neomycin",
+        "bacitracin": "bacitracin",
+        "cortaid": "hydrocortisone",
+        "monistat": "miconazole",
+        "lotrimin": "clotrimazole",
+        "lamisil": "terbinafine",
+        "nizoral": "ketoconazole",
+        "desitin": "zinc_oxide",
+        "caladryl": "calamine",
+        "orajel": "benzocaine",
+        "aspercreme": "trolamine",
+        "bengay": "menthol",
+        "vicks": "camphor",
+        "icy_hot": "menthol",
+        # Sleep aids
+        "unisom": "doxylamine",
+        "simply_sleep": "diphenhydramine",
+        "ambien": "zolpidem",
+        "lunesta": "eszopiclone",
+        # Motion sickness
+        "dramamine": "dimenhydrinate",
+        "bonine": "meclizine",
+        "antivert": "meclizine",
+        # Prescription brands
+        "diovan": "valsartan",
+        "avapro": "irbesartan",
+        "micardis": "telmisartan",
+        "atacand": "candesartan",
+        "pravachol": "pravastatin",
+        "livalo": "pitavastatin",
+        "tricor": "fenofibrate",
+        "zetia": "ezetimibe",
+        "plavix": "clopidogrel",
+        "effient": "prasugrel",
+        "eliquis": "apixaban",
+        "xarelto": "rivaroxaban",
+        "pradaxa": "dabigatran",
+        # Antidepressants
+        "wellbutrin": "bupropion",
+        "cymbalta": "duloxetine",
+        "effexor": "venlafaxine",
+        "pristiq": "desvenlafaxine",
+        "remeron": "mirtazapine",
+        "trazodone": "trazodone",
+        # Seizure medications
+        "tegretol": "carbamazepine",
+        "dilantin": "phenytoin",
+        "lamictal": "lamotrigine",
+        "topamax": "topiramate",
+        "keppra": "levetiracetam",
+        # Migraine medications
+        "imitrex": "sumatriptan",
+        "maxalt": "rizatriptan",
+        "zomig": "zolmitriptan",
+        "relpax": "eletriptan",
+        "treximet": "sumatriptan",
+        # Muscle relaxants
+        "flexeril": "cyclobenzaprine",
+        "zanaflex": "tizanidine",
+        "soma": "carisoprodol",
+        "robaxin": "methocarbamol",
+        "skelaxin": "metaxalone",
+        # Anti-inflammatory
+        "celebrex": "celecoxib",
+        "mobic": "meloxicam",
+        "voltaren": "diclofenac",
+        "indocin": "indomethacin",
+        "toradol": "ketorolac",
     }
 
     # Common misspellings
     MISSPELLING_CORRECTIONS = {
         "ibuprofin": "ibuprofen",
         "ibuprophen": "ibuprofen",
+        "ibrufen": "ibuprofen",  # Very common misspelling
+        "ibrufin": "ibuprofen",
+        "ibropen": "ibuprofen",
         "acetominophen": "acetaminophen",
         "acetamenophen": "acetaminophen",
+        "acetominofen": "acetaminophen",
         "paracetomol": "paracetamol",
         "atorvistatin": "atorvastatin",
         "metforman": "metformin",
@@ -103,6 +206,8 @@ class DrugNormalizer:
         "gabapenten": "gabapentin",
         "omeprozole": "omeprazole",
         "prednezone": "prednisone",
+        "albedazole": "albendazole",  # User typed this correctly, but we need mapping
+        "albendazol": "albendazole",
     }
 
     # Patterns for cleaning drug names

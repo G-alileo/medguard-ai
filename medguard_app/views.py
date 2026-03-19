@@ -46,7 +46,6 @@ class EvaluateDrugView(View):
     def post(self, request) -> JsonResponse:
         """Handle POST request for drug evaluation."""
         try:
-            # Parse JSON body
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError as e:
@@ -59,7 +58,6 @@ class EvaluateDrugView(View):
                     status=400,
                 )
 
-            # Validate required fields
             symptoms = data.get("symptoms", [])
             proposed_drug = data.get("proposed_drug", "")
             existing_drugs = data.get("existing_drugs", [])
@@ -91,7 +89,6 @@ class EvaluateDrugView(View):
                     status=400,
                 )
 
-            # Get pipeline and evaluate
             pipeline = get_decision_pipeline()
             result = pipeline.evaluate(
                 symptoms=symptoms,
@@ -163,7 +160,6 @@ class HealthCheckView(View):
         )
 
 
-# Function-based view alternatives (for simpler routing)
 @csrf_exempt
 def evaluate_drug(request) -> JsonResponse:
     """Function-based view for drug evaluation."""
