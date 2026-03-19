@@ -59,7 +59,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# Environment variables (NEVER commit)
+# Environment variables 
 .env
 .env.local
 .env.*.local
