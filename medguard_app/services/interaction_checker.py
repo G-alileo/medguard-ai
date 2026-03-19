@@ -60,6 +60,12 @@ class InteractionChecker:
         all_drugs = [proposed_drug] + existing_drugs
         interactions = self.interaction_repo.check_multiple_interactions(all_drugs)
 
+        # Map database severity to display severity for RiskEngine
+        for interaction in interactions:
+            raw_severity = interaction.get("severity", "unknown")
+            interaction["severity"] = self.SEVERITY_DISPLAY.get(raw_severity, "unknown")
+            interaction["severity_raw"] = raw_severity  # Keep original for reference
+
         return interactions
 
     def get_all_interactions_for_drug(self, drug_name: str) -> list[dict]:

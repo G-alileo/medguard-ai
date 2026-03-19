@@ -1,0 +1,73 @@
+[
+  {
+    "test_id": "basic_1.1",
+    "name": "Perfect Match - Headache + Ibuprofen",
+    "level": "basic",
+    "input": {
+      "symptoms": ["headache"],
+      "proposed_drug": "ibuprofen",
+      "existing_drugs": []
+    },
+    "expected": {
+      "risk_level": "LOW",
+      "treats_symptom": true,
+      "interactions_found": 0
+    }
+  },
+  {
+    "test_id": "basic_1.2",
+    "name": "Fever Treatment - Acetaminophen",
+    "level": "basic",
+    "input": {
+      "symptoms": ["fever"],
+      "proposed_drug": "acetaminophen",
+      "existing_drugs": []
+    },
+    "expected": {
+      "risk_level": "LOW",
+      "treats_symptom": true
+    }
+  },
+  {
+    "test_id": "basic_1.3",
+    "name": "Allergy Relief - Cetirizine",
+    "level": "basic",
+    "input": {
+      "symptoms": ["sneezing", "runny nose"],
+      "proposed_drug": "cetirizine",
+      "existing_drugs": []
+    },
+    "expected": {
+      "risk_level": "LOW",
+      "treats_symptom": true
+    }
+  },
+  {
+    "test_id": "basic_1.4",
+    "name": "Digestive Issues - Ondansetron",
+    "level": "basic",
+    "input": {
+      "symptoms": ["nausea"],
+      "proposed_drug": "ondansetron",
+      "existing_drugs": []
+    },
+    "expected": {
+      "risk_level": "LOW",
+      "treats_symptom": true
+    }
+  },
+  {
+    "test_id": "basic_1.5",
+    "name": "Cough Relief - Dextromethorphan",
+    "level": "basic",
+    "input": {
+      "symptoms": ["cough"],
+      "proposed_drug": "dextromethorphan",
+      "existing_drugs": []
+    },
+    "expected": {
+      "risk_level": "LOW",
+      "treats_symptom": true
+    }
+  }
+]

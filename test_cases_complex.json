@@ -1,0 +1,103 @@
+[
+  {
+    "test_id": "complex_3.1",
+    "name": "Treatment Mismatch - Antibiotic for Viral",
+    "level": "complex",
+    "input": {
+      "symptoms": ["fever", "cough", "fatigue"],
+      "proposed_drug": "amoxicillin",
+      "existing_drugs": []
+    },
+    "expected": {
+      "risk_level": "MEDIUM",
+      "treats_symptom": false,
+      "treatment_confidence": "low"
+    }
+  },
+  {
+    "test_id": "complex_3.2",
+    "name": "Major Drug Interaction - Warfarin + Aspirin",
+    "level": "complex",
+    "input": {
+      "symptoms": ["headache"],
+      "proposed_drug": "aspirin",
+      "existing_drugs": ["warfarin"]
+    },
+    "expected": {
+      "risk_level": "HIGH",
+      "interactions_found": 1,
+      "interaction_risk_level": "major"
+    }
+  },
+  {
+    "test_id": "complex_3.3",
+    "name": "CNS Depressant Combination",
+    "level": "complex",
+    "input": {
+      "symptoms": ["anxiety"],
+      "proposed_drug": "alprazolam",
+      "existing_drugs": ["oxycodone", "zolpidem"]
+    },
+    "expected": {
+      "risk_level": "HIGH",
+      "interactions_found": 2
+    }
+  },
+  {
+    "test_id": "complex_3.4",
+    "name": "Serotonin Syndrome Risk",
+    "level": "complex",
+    "input": {
+      "symptoms": ["depression"],
+      "proposed_drug": "fluoxetine",
+      "existing_drugs": ["tramadol", "trazodone"]
+    },
+    "expected": {
+      "risk_level": "HIGH",
+      "side_effect_overlap": "high"
+    }
+  },
+  {
+    "test_id": "complex_3.5",
+    "name": "QT Prolongation Risk",
+    "level": "complex",
+    "input": {
+      "symptoms": ["nausea"],
+      "proposed_drug": "ondansetron",
+      "existing_drugs": ["azithromycin", "ciprofloxacin"]
+    },
+    "expected": {
+      "risk_level": "HIGH",
+      "interactions_found": 2
+    }
+  },
+  {
+    "test_id": "complex_3.6",
+    "name": "Polypharmacy - Multiple Risk Factors",
+    "level": "complex",
+    "input": {
+      "symptoms": ["pain"],
+      "proposed_drug": "tramadol",
+      "existing_drugs": ["sertraline", "ondansetron", "linezolid"]
+    },
+    "expected": {
+      "risk_level": "HIGH",
+      "interactions_found": 3
+    }
+  },
+  {
+    "test_id": "complex_3.7",
+    "name": "Contraindication - MAO Inhibitor",
+    "level": "complex",
+    "input": {
+      "symptoms": ["pain"],
+      "proposed_drug": "tramadol",
+      "existing_drugs": ["phenelzine"]
+    },
+    "expected": {
+      "risk_level": "HIGH",
+      "interactions_found": 1,
+      "interaction_risk_level": "contraindicated"
+    }
+  }
+]
