@@ -187,6 +187,7 @@ data/raw/
 *.bak
 *.backup
 *~.nib
+*~
 
 # Documentation builds
 docs/_build/
