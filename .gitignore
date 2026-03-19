@@ -9,10 +9,11 @@ wheels/
 # Virtual environments
 .venv
 
-# # Environment variables (NEVER commit)
-# .env
-# .env.local
-# .env.*.local
+
+# Environment variables (NEVER commit)
+.env
+.env.local
+.env.*.local
 
 # Database
 *.sqlite3
@@ -28,10 +29,15 @@ db.sqlite3
 logs/
 *.log
 
-# # Processed data (can be regenerated)
-# data/processed/
-# data/chromadb/
+# Processed data (can be regenerated)
+data/processed/
+data/chromadb/
+data/raw/
 
-# OS files
-# .DS_Store
-# Thumbs.db
+# data directory in whole, if you want to ignore all data files
+data/
+
+
+OS files
+.DS_Store
+Thumbs.db
