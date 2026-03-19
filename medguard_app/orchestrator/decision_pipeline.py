@@ -56,7 +56,7 @@ class DecisionPipeline:
 
         self.treatment_validator = treatment_validator or TreatmentValidator(self.drug_repo)
         self.interaction_checker = interaction_checker or InteractionChecker(
-            self.interaction_repo, self.drug_repo
+            self.drug_repo, self.interaction_repo
         )
         self.side_effect_analyzer = side_effect_analyzer or SideEffectAnalyzer(self.drug_repo)
         self.risk_engine = risk_engine or RiskEngine()
