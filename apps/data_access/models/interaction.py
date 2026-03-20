@@ -1,19 +1,8 @@
-"""
-Drug Interaction models - The CORE table for risk assessment.
-"""
-
 from django.db import models
-
 from .drug import Drug
 
 
 class DrugInteraction(models.Model):
-    """
-    Drug-drug interactions. This is the CORE table for risk assessment.
-
-    Interaction between drug_a and drug_b. Order is normalized so
-    drug_a.id < drug_b.id to avoid duplicates.
-    """
 
     SEVERITY_CHOICES = [
         ("contraindicated", "Contraindicated - Do Not Use Together"),
@@ -82,5 +71,4 @@ class DrugInteraction(models.Model):
 
     @property
     def is_dangerous(self) -> bool:
-        """Check if this interaction is dangerous (contraindicated or major)."""
         return self.severity in ("contraindicated", "major")

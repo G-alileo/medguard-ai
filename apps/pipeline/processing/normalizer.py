@@ -1,9 +1,3 @@
-"""
-Drug Name Normalizer - Standardize drug names across all sources.
-
-Maps any drug name input (brand, generic, misspelling) to a canonical form.
-"""
-
 import json
 import re
 from dataclasses import dataclass
@@ -27,14 +21,6 @@ class NormalizationResult:
 
 
 class DrugNormalizer:
-    """
-    Normalizes drug names from any form to canonical names.
-
-    Usage:
-        normalizer = DrugNormalizer()
-        result = normalizer.normalize("Tylenol 500mg")
-        # result.canonical_name == "acetaminophen"
-    """
 
     # Common brand-to-generic mappings (bootstrap data)
     BOOTSTRAP_MAPPINGS = {
@@ -220,12 +206,7 @@ class DrugNormalizer:
     SPECIAL_CHARS_PATTERN = re.compile(r"[^a-z\s]")
 
     def __init__(self, dictionary_path: Optional[Path] = None):
-        """
-        Initialize the normalizer.
 
-        Args:
-            dictionary_path: Path to drug_dictionary.json. If None, uses bootstrap data.
-        """
         self.alias_index: dict[str, str] = {}
         self.drug_info: dict[str, dict] = {}
 
@@ -279,15 +260,7 @@ class DrugNormalizer:
                     self.alias_index[alias] = canonical
 
     def preprocess(self, raw_input: str) -> str:
-        """
-        Clean and normalize user input for matching.
 
-        Args:
-            raw_input: Raw drug name from user
-
-        Returns:
-            Cleaned, lowercase drug name
-        """
         if not raw_input:
             return ""
 
@@ -323,11 +296,7 @@ class DrugNormalizer:
         threshold: float = 85.0,
         max_results: int = 3,
     ) -> list[tuple[str, float]]:
-        """
-        Fuzzy matching for typos and minor variations.
 
-        Returns list of (canonical_name, confidence_score) tuples.
-        """
         if not self.alias_index:
             return []
 
@@ -359,16 +328,7 @@ class DrugNormalizer:
         user_input: str,
         fuzzy_threshold: float = 85.0,
     ) -> NormalizationResult:
-        """
-        Main normalization entry point.
 
-        Args:
-            user_input: Drug name from user (any form)
-            fuzzy_threshold: Minimum score for fuzzy matches (0-100)
-
-        Returns:
-            NormalizationResult with canonical name and confidence
-        """
         original = user_input
         normalized = self.preprocess(user_input)
 
@@ -441,9 +401,5 @@ def get_normalizer() -> DrugNormalizer:
 
 @lru_cache(maxsize=10000)
 def normalize_drug_name(name: str) -> NormalizationResult:
-    """
-    Convenience function for normalizing a single drug name.
 
-    Results are cached for performance.
-    """
     return get_normalizer().normalize(name)

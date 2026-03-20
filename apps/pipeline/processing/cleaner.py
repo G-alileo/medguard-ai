@@ -1,7 +1,3 @@
-"""
-Data Cleaner - Handle nulls, duplicates, and standardize text fields.
-"""
-
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -80,15 +76,7 @@ class DataCleaner:
         return result if result else None
 
     def clean_text(self, value: Any) -> Optional[str]:
-        """
-        Clean a text field (preserve case, handle multiline).
 
-        Args:
-            value: Input value
-
-        Returns:
-            Cleaned text or None if null
-        """
         if self.is_null(value):
             self.stats.null_values_found += 1
             return None
@@ -104,17 +92,7 @@ class DataCleaner:
         return result if result else None
 
     def clean_integer(self, value: Any, min_val: Optional[int] = None, max_val: Optional[int] = None) -> Optional[int]:
-        """
-        Clean and validate an integer value.
 
-        Args:
-            value: Input value
-            min_val: Minimum allowed value (inclusive)
-            max_val: Maximum allowed value (inclusive)
-
-        Returns:
-            Cleaned integer or None if invalid
-        """
         if self.is_null(value):
             self.stats.null_values_found += 1
             return None
@@ -167,16 +145,7 @@ class DataCleaner:
             return None
 
     def clean_date(self, value: Any, formats: Optional[list[str]] = None) -> Optional[datetime]:
-        """
-        Clean and parse a date value.
 
-        Args:
-            value: Input value
-            formats: List of date formats to try
-
-        Returns:
-            Parsed datetime or None if invalid
-        """
         if self.is_null(value):
             self.stats.null_values_found += 1
             return None
@@ -224,16 +193,7 @@ class DataCleaner:
         return None
 
     def clean_list_string(self, value: Any, separator: str = ";") -> list[str]:
-        """
-        Clean a string containing multiple values separated by a delimiter.
 
-        Args:
-            value: Input value (e.g., "item1; item2; item3")
-            separator: Delimiter between items
-
-        Returns:
-            List of cleaned strings
-        """
         if self.is_null(value):
             return []
 
@@ -248,16 +208,7 @@ class DataCleaner:
         return cleaned
 
     def deduplicate_list(self, items: list[Any], key_func=None) -> list[Any]:
-        """
-        Remove duplicates from a list while preserving order.
 
-        Args:
-            items: List of items
-            key_func: Optional function to extract comparison key
-
-        Returns:
-            Deduplicated list
-        """
         seen = set()
         result = []
 
@@ -272,10 +223,7 @@ class DataCleaner:
         return result
 
     def clean_drug_name(self, value: Any) -> Optional[str]:
-        """
-        Special cleaning for drug names.
-        Handles patterns like "DRUG-100", "DRUG (strength)", etc.
-        """
+
         if self.is_null(value):
             self.stats.null_values_found += 1
             return None
@@ -287,10 +235,6 @@ class DataCleaner:
 
         # Remove parenthetical dosage info
         name = re.sub(r"\s*\([^)]*\)", "", name)
-
-        # Remove "HCI", "hydrochloride" etc. for matching
-        # (but keep original for display)
-        # name = re.sub(r'\s+(hcl|hydrochloride|sodium|potassium|calcium|acetate)$', '', name, flags=re.IGNORECASE)
 
         # Normalize whitespace
         name = " ".join(name.split())

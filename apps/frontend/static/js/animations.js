@@ -1,6 +1,3 @@
-// MedGuard AI - Animations and Interactions
-
-// Fade in on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize page with fade-in effect
     document.body.style.opacity = '0';

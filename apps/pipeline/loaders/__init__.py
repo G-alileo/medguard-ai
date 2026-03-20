@@ -1,7 +1,3 @@
-"""
-Pipeline Loaders - Load data into MySQL and ChromaDB.
-"""
-
 from .mysql_loader import MySQLLoader
 from .vector_loader import VectorLoader
 

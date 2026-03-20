@@ -1,11 +1,5 @@
-"""
-Drug Repository - Data access layer for drug entities.
-"""
-
 from typing import Optional
-
 from django.db.models import Q, Count
-
 from apps.data_access.models import (
     Drug,
     DrugAlias,
@@ -20,10 +14,6 @@ from apps.pipeline.processing import normalize_drug_name
 
 
 class DrugRepository:
-    """
-    Repository for accessing drug data.
-    Provides clean interface for business logic layer.
-    """
 
     def get_by_id(self, drug_id: int) -> Optional[Drug]:
         """Get a drug by its primary key."""
@@ -33,11 +23,6 @@ class DrugRepository:
             return None
 
     def get_by_name(self, name: str) -> Optional[Drug]:
-        """
-        Get a drug by any name (brand, generic, alias).
-
-        Performs normalization to find the canonical drug.
-        """
         # First, try exact match on canonical name
         name_lower = name.lower().strip()
 
@@ -58,16 +43,7 @@ class DrugRepository:
         return None
 
     def search(self, query: str, limit: int = 10) -> list[Drug]:
-        """
-        Search for drugs by name (partial match).
 
-        Args:
-            query: Search query
-            limit: Maximum results
-
-        Returns:
-            List of matching drugs
-        """
         query_lower = query.lower().strip()
 
         # Search in canonical names
@@ -108,12 +84,7 @@ class DrugRepository:
         )
 
     def get_side_effects(self, drug: Drug, limit: int = 20) -> list[dict]:
-        """
-        Get known side effects for a drug.
 
-        Returns:
-            List of dicts with reaction info and report counts
-        """
         reactions = (
             DrugAdverseReaction.objects
             .filter(drug=drug)
@@ -140,7 +111,6 @@ class DrugRepository:
         )
 
     def get_drugs_with_most_interactions(self, limit: int = 10) -> list[dict]:
-        """Get drugs with the most known interactions."""
         from apps.data_access.models import DrugInteraction
 
         # Count interactions for each drug
@@ -166,12 +136,7 @@ class DrugRepository:
         return Drug.objects.filter(rxcui=rxcui).first()
 
     def get_alternatives(self, drug: Drug, limit: int = 5) -> list[dict]:
-        """
-        Get alternative drugs for a given drug.
-
-        Returns:
-            List of dicts with alternative drug info
-        """
+ 
         alternatives = (
             DrugAlternative.objects
             .filter(original_drug=drug)
@@ -192,16 +157,7 @@ class DrugRepository:
         ]
 
     def does_drug_treat_symptom(self, drug_name: str, symptom: str) -> dict:
-        """
-        Check if a drug treats a specific symptom using database.
 
-        Args:
-            drug_name: Drug canonical name
-            symptom: Symptom/condition to check
-
-        Returns:
-            Dict with treats (bool), confidence, reason
-        """
         drug = self.get_by_name(drug_name)
         if not drug:
             return {
@@ -240,15 +196,7 @@ class DrugRepository:
         }
 
     def get_side_effects_list(self, drug_name: str) -> list[str]:
-        """
-        Get side effects as simple list of strings.
 
-        Args:
-            drug_name: Drug canonical name
-
-        Returns:
-            List of side effect names
-        """
         drug = self.get_by_name(drug_name)
         if not drug:
             return []
@@ -262,16 +210,7 @@ class DrugRepository:
         )
 
     def get_drugs_for_symptom(self, symptom: str, limit: int = 10) -> list[dict]:
-        """
-        Get drugs that treat a specific symptom.
 
-        Args:
-            symptom: Symptom/condition name
-            limit: Maximum results
-
-        Returns:
-            List of drugs that treat this symptom
-        """
         symptom_lower = symptom.lower().strip()
 
         drug_indications = (

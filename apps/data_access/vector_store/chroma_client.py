@@ -1,7 +1,3 @@
-"""
-ChromaDB Client - Vector store interface for semantic search.
-"""
-
 import logging
 from typing import Optional
 
@@ -11,11 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 class ChromaClient:
-    """
-    Client for interacting with ChromaDB vector store.
-
-    Provides semantic search capabilities for drug information.
-    """
 
     def __init__(
         self,
@@ -93,18 +84,7 @@ class ChromaClient:
         limit: int = 5,
         drug_filter: Optional[str] = None,
     ) -> list[dict]:
-        """
-        Semantic search across vector store.
 
-        Args:
-            query: Search query
-            collection_name: Name of collection to search
-            limit: Maximum results
-            drug_filter: Optional drug name to filter results
-
-        Returns:
-            List of result dicts with text, metadata, and distance
-        """
         collection = self.get_collection(collection_name)
         if collection is None:
             logger.warning(f"Collection {collection_name} not available")
@@ -164,17 +144,8 @@ class ChromaClient:
         query_type: Optional[str] = None,
         limit: int = 5,
     ) -> list[dict]:
-        """
-        Retrieve relevant context for a specific drug.
+        
 
-        Args:
-            drug: Drug name
-            query_type: Type of info needed ('interactions', 'side_effects', 'usage')
-            limit: Maximum results per collection
-
-        Returns:
-            List of relevant context chunks
-        """
         results = []
 
         # Build query based on type
@@ -214,17 +185,7 @@ class ChromaClient:
         drug2: Optional[str] = None,
         limit: int = 5,
     ) -> list[dict]:
-        """
-        Search for interaction information between drugs.
 
-        Args:
-            drug1: First drug name
-            drug2: Second drug name (optional)
-            limit: Maximum results
-
-        Returns:
-            List of relevant interaction context
-        """
         if drug2:
             query = f"drug interaction between {drug1} and {drug2}"
         else:
@@ -271,17 +232,7 @@ class ChromaClient:
         limit: int = 5,
         threshold: float = 0.7,
     ) -> list[dict]:
-        """
-        Search for general medical context about symptoms, conditions, and treatments.
 
-        Args:
-            query: Medical query (e.g., "fever sneezing treatment")
-            limit: Maximum results
-            threshold: Similarity threshold (0.0-1.0)
-
-        Returns:
-            List of relevant medical context
-        """
         results = []
 
         # Search all collections for relevant medical information
@@ -294,9 +245,7 @@ class ChromaClient:
                 limit=limit,
             )
 
-            # Filter by distance threshold (similarity)
-            # Note: ChromaDB returns distance, where smaller = more similar
-            # Convert to similarity score: similarity = 1 - distance
+
             filtered_results = []
             for result in collection_results:
                 distance = result.get("distance", 1.0)
@@ -346,7 +295,6 @@ _chroma_client: Optional[ChromaClient] = None
 
 
 def get_chroma_client() -> ChromaClient:
-    """Get the global ChromaClient instance."""
     global _chroma_client
     if _chroma_client is None:
         _chroma_client = ChromaClient()

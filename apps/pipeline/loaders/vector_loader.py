@@ -1,7 +1,3 @@
-"""
-Vector Loader - Generate embeddings and store in ChromaDB.
-"""
-
 import gc
 import logging
 from pathlib import Path
@@ -14,9 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class VectorLoader:
-    """
-    Creates text chunks from data and stores them in ChromaDB.
-    """
 
     def __init__(
         self,
@@ -69,16 +62,7 @@ class VectorLoader:
         return self._collections[full_name]
 
     def embed_texts(self, texts: list[str], batch_size: int = 32) -> list[list[float]]:
-        """
-        Generate embeddings for a list of texts.
 
-        Args:
-            texts: List of text strings
-            batch_size: Batch size for embedding
-
-        Returns:
-            List of embedding vectors
-        """
         if not texts:
             return []
 
@@ -92,16 +76,7 @@ class VectorLoader:
         return embeddings.tolist()
 
     def chunk_label_text(self, label: dict, max_chunk_size: int = 1500) -> list[dict]:
-        """
-        Split a drug label into meaningful chunks.
 
-        Args:
-            label: OpenFDA label dict
-            max_chunk_size: Maximum characters per chunk
-
-        Returns:
-            List of chunk dicts with text, metadata
-        """
         chunks = []
 
         openfda = label.get("openfda", {})
@@ -151,9 +126,7 @@ class VectorLoader:
         return chunks
 
     def _split_text(self, text: str, max_size: int, overlap: int = 100) -> list[str]:
-        """
-        Split text into chunks with overlap.
-        """
+
         if len(text) <= max_size:
             return [text.strip()]
 
@@ -182,12 +155,7 @@ class VectorLoader:
         return chunks
 
     def load_drug_labels(self, show_progress: bool = True) -> dict:
-        """
-        Load drug labels into ChromaDB.
 
-        Returns:
-            Statistics dict
-        """
         from pipeline.processing import DataUnifier
 
         stats = {"labels_processed": 0, "chunks_created": 0, "errors": 0}
@@ -254,12 +222,7 @@ class VectorLoader:
         gc.collect()
 
     def load_interactions(self, show_progress: bool = True) -> dict:
-        """
-        Load drug interactions into vector store.
 
-        Returns:
-            Statistics dict
-        """
         from apps.data_access.models import DrugInteraction
 
         stats = {"interactions_processed": 0, "chunks_created": 0, "errors": 0}
@@ -317,12 +280,7 @@ class VectorLoader:
         return stats
 
     def load_adverse_reactions(self, show_progress: bool = True) -> dict:
-        """
-        Load adverse reaction summaries into vector store.
 
-        Returns:
-            Statistics dict
-        """
         from apps.data_access.models import DrugAdverseReaction
 
         stats = {"reactions_processed": 0, "chunks_created": 0, "errors": 0}
@@ -386,12 +344,7 @@ class VectorLoader:
         return stats
 
     def load_all(self, show_progress: bool = True) -> dict:
-        """
-        Load all data into vector store.
 
-        Returns:
-            Combined statistics dict
-        """
         all_stats = {}
 
         all_stats["drug_labels"] = self.load_drug_labels(show_progress)

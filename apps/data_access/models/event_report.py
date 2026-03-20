@@ -1,18 +1,9 @@
-"""
-Adverse Event Report models - Individual reports from FAERS/FDA data.
-"""
-
 from django.db import models
-
 from .drug import Drug
 from .adverse_reaction import AdverseReaction
 
 
 class AdverseEventReport(models.Model):
-    """
-    Individual adverse event reports from FAERS/FDA data.
-    Used for computing reaction frequencies and detecting patterns.
-    """
 
     SOURCE_CHOICES = [
         ("openfda_events", "OpenFDA Drug Events"),
@@ -54,10 +45,6 @@ class AdverseEventReport(models.Model):
 
 
 class EventReportDrug(models.Model):
-    """
-    Drugs involved in an adverse event report.
-    Links reports to drugs with characterization (suspect, concomitant, interacting).
-    """
 
     CHARACTERIZATION_CHOICES = [
         ("suspect", "Primary Suspect"),

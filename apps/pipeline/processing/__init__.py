@@ -1,7 +1,3 @@
-"""
-Pipeline Processing Module - Data normalization, cleaning, and unification.
-"""
-
 from .cleaner import DataCleaner, get_cleaner
 from .normalizer import DrugNormalizer, get_normalizer, normalize_drug_name, NormalizationResult
 from .unifier import (

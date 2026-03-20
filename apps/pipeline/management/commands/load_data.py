@@ -1,12 +1,3 @@
-"""
-Management command to load all data from raw sources.
-
-Usage:
-    python manage.py load_data --all
-    python manage.py load_data --mysql-only
-    python manage.py load_data --vector-only
-"""
-
 import logging
 import time
 from datetime import timedelta

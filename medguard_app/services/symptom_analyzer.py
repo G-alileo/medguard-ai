@@ -1,7 +1,3 @@
-"""
-Smart Symptom Analyzer - Uses vector similarity to understand symptom combinations.
-"""
-
 import logging
 from typing import Dict, List, Tuple, Optional
 from apps.data_access.vector_store import get_chroma_client
@@ -10,13 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 class SymptomAnalyzer:
-    """
-    Analyzes symptom combinations using semantic understanding.
-
-    Addresses cases like:
-    - "fever + sneezing" vs "hay fever + sneezing"
-    - Understanding symptom contexts and combinations
-    """
 
     SYMPTOM_CONTEXTS = {
         "viral_infection": {
@@ -70,15 +59,7 @@ class SymptomAnalyzer:
             return None
 
     def analyze_symptom_combination(self, symptoms: List[str]) -> Dict:
-        """
-        Analyze a combination of symptoms for context and appropriateness.
 
-        Args:
-            symptoms: List of symptom strings
-
-        Returns:
-            Dict with context analysis and treatment suggestions
-        """
         if not symptoms:
             return {"context": "none", "confidence": 0.0, "suggestions": []}
 
@@ -195,11 +176,7 @@ class SymptomAnalyzer:
         return guidance_map.get(context, "Consider consulting a healthcare provider for appropriate treatment.")
 
     def improve_treatment_validation(self, drug: str, symptoms: List[str]) -> Dict:
-        """
-        Improve treatment validation using symptom context.
 
-        Returns updated confidence and appropriateness scores.
-        """
         analysis = self.analyze_symptom_combination(symptoms)
 
         appropriate_treatments = analysis.get("appropriate_treatments", [])

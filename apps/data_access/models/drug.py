@@ -1,15 +1,7 @@
-"""
-Drug models - Core drug entity and aliases.
-"""
-
 from django.db import models
 
 
 class Drug(models.Model):
-    """
-    Central drug entity - the normalized reference for all drug names.
-    Links brand names, generics, and identifiers to a single canonical drug.
-    """
 
     canonical_name = models.CharField(
         max_length=500, unique=True, db_index=True, help_text="Normalized lowercase drug name"
@@ -46,10 +38,6 @@ class Drug(models.Model):
 
 
 class DrugAlias(models.Model):
-    """
-    All known names for a drug (brand names, generic variations, spelling variants).
-    Enables search: input any alias -> find canonical drug.
-    """
 
     ALIAS_TYPE_CHOICES = [
         ("brand", "Brand Name"),

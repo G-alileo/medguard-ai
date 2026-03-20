@@ -1,10 +1,3 @@
-"""
-DeepSeek LLM Service - Generate explanations for risk assessments.
-
-IMPORTANT: The LLM only EXPLAINS decisions, it does NOT make them.
-The risk score is calculated deterministically by RiskEngine.
-"""
-
 import json
 import logging
 from typing import Optional
@@ -16,20 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSeekService:
-    """
-    Service for generating natural language explanations using DeepSeek API.
-
-    The LLM's role is strictly limited to:
-    1. Explaining the risk score (which it cannot change)
-    2. Describing interactions and side effects in plain language
-    3. Providing context from retrieved documents
-    4. Generating user-friendly recommendations
-
-    The LLM CANNOT:
-    - Change the risk score
-    - Override safety assessments
-    - Introduce new medical facts not in the data
-    """
 
     SYSTEM_PROMPT = """You are a medical risk analysis assistant for MedGuard AI.
 
@@ -67,18 +46,7 @@ Your explanation should be ONE concise paragraph that covers the key risk factor
         risk_score: int,
         risk_level: str,
     ) -> str:
-        """
-        Build the prompt for the LLM with all relevant information.
 
-        Args:
-            findings: Structured findings from the analysis
-            context: Retrieved context from vector store
-            risk_score: The pre-calculated risk score (0-100+)
-            risk_level: The risk level (LOW/MEDIUM/HIGH)
-
-        Returns:
-            Formatted prompt string
-        """
         findings_text = self._format_findings(findings)
 
         context_text = self._format_context(context)
@@ -154,18 +122,7 @@ Provide a single, concise paragraph (2-3 sentences) that explains the key risk f
         risk_score: int,
         risk_level: str,
     ) -> str:
-        """
-        Generate a natural language explanation of the risk assessment.
 
-        Args:
-            findings: Structured findings from the pipeline
-            context: Retrieved context from vector store
-            risk_score: Pre-calculated risk score
-            risk_level: Risk level (LOW/MEDIUM/HIGH)
-
-        Returns:
-            Generated explanation text
-        """
         if self.mock_mode:
             return self._generate_mock_explanation(findings, risk_score, risk_level)
 
@@ -211,11 +168,7 @@ Provide a single, concise paragraph (2-3 sentences) that explains the key risk f
         risk_score: int,
         risk_level: str,
     ) -> str:
-        """
-        Generate a mock explanation when API is not available.
 
-        This provides a reasonable fallback that's still useful.
-        """
         risk_factors = []
 
         interactions = findings.get("interactions", [])

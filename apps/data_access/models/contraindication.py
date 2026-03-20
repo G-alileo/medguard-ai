@@ -1,17 +1,7 @@
-"""
-Contraindication models - When a drug should NOT be used.
-"""
-
 from django.db import models
-
 from .drug import Drug
 
-
 class Contraindication(models.Model):
-    """
-    Conditions/situations where a drug should NOT be used.
-    Extracted from drug labels 'contraindications' field.
-    """
 
     SEVERITY_CHOICES = [
         ("absolute", "Absolute - Never Use"),

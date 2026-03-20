@@ -1,13 +1,4 @@
 #!/usr/bin/env python
-"""
-End-to-End API Test Script
-
-Tests the complete MedGuard API flow including the views and decision pipeline.
-
-Usage:
-    python scripts/test_api.py
-"""
-
 import os
 import sys
 import json

@@ -1,7 +1,3 @@
-"""
-Input Normalizer - Normalize user inputs (symptoms, drug names) to canonical forms.
-"""
-
 import re
 from typing import Optional
 
@@ -9,9 +5,6 @@ from apps.pipeline.processing import get_normalizer, NormalizationResult
 
 
 class InputNormalizer:
-    """
-    Normalizes user inputs to canonical forms for consistent processing.
-    """
 
     SYMPTOM_MAPPINGS = {
         "head pain": "headache",
@@ -94,15 +87,7 @@ class InputNormalizer:
         self._symptom_lookup = {k.lower(): v for k, v in self.SYMPTOM_MAPPINGS.items()}
 
     def normalize_symptom(self, symptom: str) -> str:
-        """
-        Normalize a symptom description to a canonical form.
 
-        Args:
-            symptom: User-provided symptom description
-
-        Returns:
-            Normalized symptom name
-        """
         if not symptom:
             return ""
 
@@ -120,15 +105,7 @@ class InputNormalizer:
         return symptom_clean
 
     def normalize_drug_name(self, drug_name: str) -> NormalizationResult:
-        """
-        Normalize a drug name to canonical form.
 
-        Args:
-            drug_name: User-provided drug name (brand, generic, or variation)
-
-        Returns:
-            NormalizationResult with canonical name and confidence
-        """
         if not drug_name:
             return NormalizationResult(
                 canonical_name=None,
@@ -140,11 +117,7 @@ class InputNormalizer:
         return self.drug_normalizer.normalize(drug_name)
 
     def normalize_drug_list(self, drug_names: list[str]) -> list[dict]:
-        """
-        Normalize a list of drug names.
 
-        Returns list of dicts with original, canonical, and confidence.
-        """
         results = []
         for name in drug_names:
             name = name.strip()
@@ -162,11 +135,7 @@ class InputNormalizer:
         return results
 
     def normalize_symptoms_list(self, symptoms: list[str]) -> list[dict]:
-        """
-        Normalize a list of symptoms.
 
-        Returns list of dicts with original and normalized forms.
-        """
         results = []
         seen = set()
 

@@ -1,6 +1,3 @@
-"""
-Management command to pre-load embedding model for faster responses.
-"""
 import logging
 import time
 from django.core.management.base import BaseCommand, CommandError

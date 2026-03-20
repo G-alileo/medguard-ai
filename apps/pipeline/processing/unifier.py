@@ -1,7 +1,3 @@
-"""
-Data Unifier - Merge data from multiple source files into unified format.
-"""
-
 import csv
 import json
 import logging
@@ -83,9 +79,6 @@ class UnifiedEventReport:
 
 
 class DataUnifier:
-    """
-    Unifies data from multiple sources into a consistent format.
-    """
 
     def __init__(
         self,
@@ -265,8 +258,7 @@ class DataUnifier:
         if not primary_drug:
             return []
 
-        # Extract mentioned drugs from interaction text
-        # This is a simplified extraction - would need NLP for full accuracy
+
         text_lower = interaction_text.lower()
 
         # Look for common drug classes and specific drugs

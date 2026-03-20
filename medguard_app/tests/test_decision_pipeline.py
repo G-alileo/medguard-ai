@@ -1,9 +1,3 @@
-"""
-Unit Tests for Decision Pipeline
-
-Tests the complete drug safety evaluation flow with mocked dependencies.
-"""
-
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime

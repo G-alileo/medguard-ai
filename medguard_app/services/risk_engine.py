@@ -1,10 +1,3 @@
-"""
-Risk Engine - Calculate risk scores based on all assessment factors.
-
-This is the CORE module that produces deterministic risk scores.
-The LLM only EXPLAINS this score - it never changes it.
-"""
-
 import logging
 from dataclasses import dataclass
 from enum import Enum
@@ -44,27 +37,6 @@ class RiskBreakdown:
 
 
 class RiskEngine:
-    """
-    Calculates risk scores for drug evaluations.
-
-    Risk scoring is DETERMINISTIC:
-    - Same inputs ALWAYS produce same score
-    - LLM only explains the score, never changes it
-
-    Scoring weights (total can exceed 100 for extreme cases):
-    - No treatment indication: 40 points
-    - Critical/Contraindicated interaction: 50 points each
-    - Major/High interaction: 30 points each
-    - Moderate interaction: 15 points each
-    - Minor interaction: 5 points each
-    - Side effect overlap: 1-30 points (based on severity)
-    - Contraindication match: 40 points
-
-    Risk levels:
-    - LOW: 0-25
-    - MEDIUM: 26-60
-    - HIGH: 61+
-    """
 
     WEIGHTS = {
         "no_treatment_indication": 40,
@@ -92,18 +64,7 @@ class RiskEngine:
         side_effect_analysis: dict,
         contraindications: Optional[list[dict]] = None,
     ) -> dict:
-        """
-        Calculate the overall risk score.
 
-        Args:
-            treatment_result: From TreatmentValidator.validate_treatment_for_symptoms()
-            interactions: From InteractionChecker.check_multiple_interactions()
-            side_effect_analysis: From SideEffectAnalyzer.analyze_side_effect_overlap()
-            contraindications: List of matched contraindications (future)
-
-        Returns:
-            Dict with score, level, and breakdown
-        """
         breakdown = RiskBreakdown()
         contraindications = contraindications or []
 
@@ -261,11 +222,7 @@ class RiskEngine:
         return " ".join(parts)
 
     def get_recommendation(self, level: str) -> dict:
-        """
-        Get a recommendation based on risk level.
 
-        Returns DETERMINISTIC recommendations, not LLM-generated.
-        """
         recommendations = {
             "LOW": {
                 "action": "likely_safe",

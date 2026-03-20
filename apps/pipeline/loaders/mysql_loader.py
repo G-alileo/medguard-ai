@@ -1,7 +1,3 @@
-"""
-MySQL Loader - Load unified data into Django ORM models.
-"""
-
 import logging
 from typing import Optional
 
@@ -84,12 +80,7 @@ class MySQLLoader:
         return reaction, created
 
     def load_drugs_from_labels(self, show_progress: bool = True) -> dict:
-        """
-        Load drugs from OpenFDA drug labels.
 
-        Returns:
-            Statistics dict with counts
-        """
         stats = {"drugs_created": 0, "aliases_created": 0, "errors": 0}
 
         logger.info("Loading drugs from OpenFDA labels...")
@@ -306,12 +297,7 @@ class MySQLLoader:
         return stats
 
     def load_event_reports(self, source: str = "openfda", show_progress: bool = True) -> dict:
-        """
-        Load adverse event reports.
 
-        Args:
-            source: "openfda" or "fda_csv"
-        """
         stats = {"reports_created": 0, "drugs_linked": 0, "reactions_linked": 0, "errors": 0}
 
         logger.info(f"Loading event reports from {source}...")
@@ -396,15 +382,10 @@ class MySQLLoader:
 
     @transaction.atomic
     def load_all(self, show_progress: bool = True) -> dict:
-        """
-        Load all data from all sources.
 
-        Returns:
-            Combined statistics dict
-        """
         all_stats = {}
 
-        # 1. Load drugs first (from labels, then SIDER)
+        # 1. Load drugs first 
         all_stats["drugs_from_labels"] = self.load_drugs_from_labels(show_progress)
         all_stats["drugs_from_sider"] = self.load_drugs_from_sider(show_progress)
 

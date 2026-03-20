@@ -1,17 +1,8 @@
-"""
-Drug Alternative models - Safer alternatives for drugs.
-"""
-
 from django.db import models
-
 from .drug import Drug
 
 
 class DrugAlternative(models.Model):
-    """
-    Drug alternatives - when one drug may be substituted for another.
-    Used to suggest safer alternatives based on symptom profile.
-    """
 
     REASON_CHOICES = [
         ("same_class", "Same Therapeutic Class"),

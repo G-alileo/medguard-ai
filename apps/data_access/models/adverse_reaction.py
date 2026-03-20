@@ -1,17 +1,8 @@
-"""
-Adverse Reaction models - Side effects and their frequencies.
-"""
-
 from django.db import models
-
 from .drug import Drug
 
 
 class AdverseReaction(models.Model):
-    """
-    Known adverse reactions / side effects.
-    Uses MedDRA Preferred Terms when available.
-    """
 
     SEVERITY_CHOICES = [
         ("mild", "Mild"),
@@ -50,9 +41,6 @@ class AdverseReaction(models.Model):
 
 
 class DrugAdverseReaction(models.Model):
-    """
-    Links drugs to their known adverse reactions with frequency data.
-    """
 
     FREQUENCY_CHOICES = [
         ("very_common", ">10%"),

@@ -1,15 +1,6 @@
-"""
-MedDRA terminology lookup.
-"""
-
 from django.db import models
 
-
 class MedDRACode(models.Model):
-    """
-    MedDRA code to preferred term mapping.
-    Used to decode ADR codes in synthetic data.
-    """
 
     code = models.CharField(max_length=20, primary_key=True)
     preferred_term = models.CharField(max_length=500, db_index=True)

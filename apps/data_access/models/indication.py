@@ -1,17 +1,8 @@
-"""
-Indication models - What conditions/symptoms a drug treats.
-"""
-
 from django.db import models
-
 from .drug import Drug
 
 
 class Indication(models.Model):
-    """
-    Medical conditions/symptoms that drugs can treat.
-    Extracted from drug labels 'indications_and_usage' field.
-    """
 
     name = models.CharField(max_length=500, unique=True, db_index=True)
     name_normalized = models.CharField(max_length=500, db_index=True)
@@ -37,9 +28,6 @@ class Indication(models.Model):
 
 
 class DrugIndication(models.Model):
-    """
-    Many-to-many relationship: which drugs treat which conditions.
-    """
 
     SOURCE_CHOICES = [
         ("fda_label", "FDA Drug Label"),
