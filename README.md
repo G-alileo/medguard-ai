@@ -1,6 +1,6 @@
 # MedGuard AI
 
-Drug safety assessment system analyzing interactions, side effects, contraindications, and treatment appropriateness.
+Drug safety assessment system analyzing interactions, side effects, contraindications, and treatment appropriateness. Helps breach a gap in Kenya's medical system.
 
 ## How It Works overview
 
